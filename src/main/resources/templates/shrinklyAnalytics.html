@@ -1,0 +1,213 @@
+<!DOCTYPE HTML>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+<head>
+    <noscript th:replace="fragments/header :: head" />
+</head>
+<body>
+
+<div th:replace="fragments/header :: sidenav"/>
+
+<!-- Main content -->
+<div class="main-content">
+    <div th:replace="fragments/header :: topnav(version='navbar-dark', enableMobileMenu=false)"/>
+
+    <div class="header bg-gradient-primary pb-8 pt-5 pt-md-8">
+        <div class="container-fluid">
+            <div class="header-body">
+                <!-- Card stats -->
+                <div class="row">
+                    <div class="col text-light">
+                        <h1 class="text-secondary" th:inline="text">Analytics for Shrinkly.net /[[${shortUrl.shortCode}]]</h1>
+                        <h3 class="text-info">Link created
+                            <span>
+                                <script th:inline="javascript">
+                                var options = { year: 'numeric', month: 'long', day: '2-digit', hour: '2-digit', minute: '2-digit' };
+                                var dateAddedStr = /*[[${shortUrl.dateAdded}]]*/
+                                var d = Date.parse(dateAddedStr + 'Z');
+                                var dateAdded = new Date(d);
+                                document.write(dateAdded.toLocaleString('en-US', options));
+                            </script>
+                            </span>
+                            <span class="pl-2"><a target="_blank" id="originalUrl" th:href="${shortUrl.fullUrl}" th:title="${shortUrl.fullUrl}" class="text-secondary text-underline">Original URL</a></span>
+                        </h3>
+                        <span th:if="${shortUrl.expiryDate}" th:remove="tag">
+                        <h3 class="text-info font-italic">
+                            Link Expires
+                            <script th:inline="javascript">
+                                var options = { year: 'numeric', month: 'long', day: '2-digit', hour: '2-digit', minute: '2-digit' };
+                                var expiryDateStr = /*[[${shortUrl.expiryDate}]]*/
+                                var d = Date.parse(expiryDateStr + 'Z');
+                                var expiryDate = new Date(d);
+                                document.write(expiryDate.toLocaleString('en-US', options));
+                            </script>
+                        </h3>
+                    </span>
+                    </div>
+                    <div class="w-100 mb-3"></div>
+
+                    <div class="col-xl-3 col-lg-6">
+                        <div class="card card-stats mb-4 mb-xl-0">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col">
+                                        <h5 class="card-title text-uppercase text-muted mb-0">Total Clicks</h5>
+                                        <span class="h2 font-weight-bold mb-0" th:text="${shortUrl.clicks}">350,897</span>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="icon icon-shape bg-danger text-white rounded-circle shadow">
+                                            <i class="fas fa-chart-bar"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="mt-3 mb-0 text-muted text-sm invisible">
+                                    <span class="text-success mr-2"><i class="fa fa-arrow-up"></i> 3.48%</span>
+                                    <span class="text-nowrap">Since last month</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-lg-6">
+                        <div class="card card-stats mb-4 mb-xl-0">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col">
+                                        <h5 class="card-title text-uppercase text-muted mb-0">Unique IP Addresses</h5>
+                                        <span class="h2 font-weight-bold mb-0" th:text="${uniqueIps}">2,356</span>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="icon icon-shape bg-warning text-white rounded-circle shadow">
+                                            <i class="fas fa-network-wired"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="mt-3 mb-0 text-muted text-sm invisible">
+                                    <span class="text-danger mr-2"><i class="fas fa-arrow-down"></i> 3.48%</span>
+                                    <span class="text-nowrap">Since last week</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-lg-6">
+                        <div class="card card-stats mb-4 mb-xl-0">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col">
+                                        <h5 class="card-title text-uppercase text-muted mb-0">Different Countries</h5>
+                                        <span class="h2 font-weight-bold mb-0" th:text="${uniqueCountries}">924</span>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="icon icon-shape bg-yellow text-white rounded-circle shadow">
+                                            <i class="fas fa-users"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="mt-3 mb-0 text-muted text-sm invisible">
+                                    <span class="text-warning mr-2"><i class="fas fa-arrow-down"></i> 1.10%</span>
+                                    <span class="text-nowrap">Since yesterday</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-lg-6">
+                        <div class="card card-stats mb-4 mb-xl-0">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col">
+                                        <h5 class="card-title text-uppercase text-muted mb-0">Mobile vs Desktop</h5>
+                                        <span class="h2 font-weight-bold mb-0" th:text="${percentMobile}">49,65% Desktop</span>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="icon icon-shape bg-info text-white rounded-circle shadow">
+                                            <i class="fas fa-percent"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="mt-3 mb-0 text-muted text-sm invisible">
+                                    <span class="text-success mr-2"><i class="fas fa-arrow-up"></i> 12%</span>
+                                    <span class="text-nowrap">Since last month</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page content -->
+    <div class="container-fluid mt--7">
+        <div class="row mt-5">
+            <div class="col">
+                <div class="jumbotron jumbotron-fluid mt-5">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div th:if="${!referrers.isEmpty()}" class="col-xl-3 col-lg-6 pb-md-5">
+                                <div class="card shadow">
+                                    <div class="card-header border-0">
+                                        <h3 class="mb-0">Link Referrers</h3>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table align-items-center table-flush">
+                                            <thead class="thead-light">
+                                            <tr>
+                                                <th scope="col">Referrer Domain</th>
+                                                <th scope="col">Hit Count</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr th:each="hit : ${referrers}">
+                                                <td>
+                                                    <span th:text="${hit.referrer}"></span>
+                                                </td>
+                                                <td>
+                                                    <span th:text="${hit.count}"></span>
+                                                </td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <div th:if="${!countryHits.isEmpty()}" class="col">
+                                <div class="card shadow">
+                                    <div class="card-header border-0">
+                                        <h3 class="mb-0">Origin Country</h3>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table align-items-center table-flush">
+                                            <thead class="thead-light">
+                                            <tr>
+                                                <th scope="col">Country</th>
+                                                <th scope="col">Hit Count</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr th:each="countryHit : ${countryHits}">
+                                                <td>
+                                                    <span th:text="${countryHit.country}"></span>
+                                                </td>
+                                                <td>
+                                                    <span th:text="${countryHit.count}"></span>
+                                                </td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div th:replace="fragments/footerLightBg :: footerLight"/>
+    </div>
+
+</div>
+
+
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE HTML>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+<head>
+    <noscript th:replace="fragments/header :: head" />
+</head>
+<body>
+
+<div th:replace="fragments/header :: sidenav"/>
+
+<!-- Main content -->
+<div class="main-content">
+    <div th:replace="fragments/header :: topnav(version='navbar-light',enableMobileMenu=false)"/>
+
+    <!-- Page content -->
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col">
+                <div class="jumbotron jumbotron-fluid mt-5">
+                    <div class="container">
+                        <h1 class="display-4">Abuse policies and enforcement for Shrinkly.net</h1>
+                        <p class="lead">
+                            Shrinkly allows you to track, in real-time, the clicks and referrers on any shortened URL.
+                            The content that a shortened url directs you to is already in existence on the internet. This is not content hosted by Shrinkly.
+                            There is some content to which we do not permit our url shortener to redirect users. Be sure to check back from time to time, as these policies may change.
+                        </p>
+                        <h2>Policies</h2>
+                        <h3>Spam, malware, and phishing</h3>
+                        <p>Do not direct users to sites containing spam and malware. Spammy sites include those that are low quality, made for advertisements or consist solely of low value content. Malware sites include sites that transmits content which may harm or interfere with the operation of the networks, servers, or other infrastructure of Shrinkly.net or others.</p>
+
+                        <p>Do not user shortened urls for</p>
+                        <ul>
+                            <li class="mb-3">URLs that are executable/package files (like .apk, .dmg, .exe, .zip, etc.), or those that auto download such files</li>
+                            <li class="mb-3">URLs that contain only IP addresses</li>
+                            <li class="mb-3">Shortening URL re-directors (either off shrinkly or via other URL shortening services).</li>
+                        </ul>
+                        <p>Do not direct users to sites engaged in phishing. Phishing sites solicit or collect sensitive data, including but not limited to passwords, financial details, and social security numbers.</p>
+
+                        <p>Report abusive short links through the following <a th:href="@{/reportAbuse}">form</a>.</p>
+
+                        <h3>Child Exploitation</h3>
+
+                        <p>Do not direct users to content that exploits or abuses children. This includes all child sexual abuse imagery (even cartoon images) and all content that presents children in a sexual manner. You cannot direct users to sites that create, possess, or distribute child sexual abuse imagery.</p>
+
+                        <p>We will remove such content and take appropriate action, which may include disabling accounts and reporting to appropriate authorities, including law enforcement.</p>
+
+                        <p>If you find a link violating this directive please report it via the following <a th:href="@{/reportAbuse}">form</a>.</p>
+
+                        <h3>Personal and confidential information</h3>
+
+                        <p>Do not direct users to sites which publish people's private and confidential information, such as credit card numbers, Social Security numbers, drivers and other license numbers, or any other information that is not publicly accessible. Keep in mind that in most cases, information that is already available elsewhere on the Internet or in public records is not considered to be private or confidential under our policies.</p>
+
+                        <p>If you find a link violating this directive please report it via the following <a th:href="@{/reportAbuse}">form</a>.</p>
+
+                        <h3>Violent Content</h3>
+
+                        <p>Do not direct users to sites that include extremely graphic or violent material for the purpose of disgusting viewers or glorifying those engaged in violence.</p>
+
+                        <p>If you find a link violating this directive please report it via the following <a th:href="@{/reportAbuse}">form</a>.</p>
+
+                        <h3>Terrorist Content</h3>
+
+                        <p>We do not permit terrorist organizations to use Shrinkly for any purpose, including recruitment. Do not direct users to sites related to terrorism, such as content that promotes terrorist acts, incites violence, or celebrates terrorist attacks, unless the site is intended to be for an educational, documentary, scientific, or artistic purpose. In those cases, be mindful to provide enough information so viewers understand the context.</p>
+
+                        <p>If you find a link violating this directive please report it via the following <a th:href="@{/reportAbuse}">form</a>.</p>
+
+                        <h3>Copyright</h3>
+
+                        <p>To report copyright infringement, please use this <a th:href="@{/reportAbuse}">form</a>, which will guide you through the process of reporting content that you believe warrants removal from Shrinkly based on applicable laws.</p>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div th:replace="fragments/footerLightBg :: footerLight"/>
+    </div>
+
+</div>
+
+
+</body>
+</html>

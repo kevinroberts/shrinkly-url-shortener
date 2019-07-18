@@ -1,0 +1,200 @@
+<!DOCTYPE HTML>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <noscript th:replace="fragments/header :: head" />
+</head>
+<body>
+
+<div th:replace="fragments/header :: sidenav"/>
+
+<!-- Main content -->
+<div class="main-content">
+
+    <div id="loadingModal" class="modal fade bd-modal-lg" data-backdrop="static" data-keyboard="false" tabindex="-1" style="display: none;" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="mb-3 processingText">Processing request</div>
+                <span style="width: 48px" class="fa fa-spinner fa-spin fa-3x"></span>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="fragments/header :: topnav(version='navbar-light',enableMobileMenu=false)"/>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col">
+                <div class="header-title">
+                    <h1 th:inline="text">Hello [[${#httpServletRequest.remoteUser}]]!</h1>
+                </div>
+                <div>
+                    <h2 th:text="#{message.changePassword}">change password </h2>
+                    <div id="errormsg" class="alert alert-danger" style="display:none"></div>
+                    <form id="changePasswordForm">
+                        <input id="username" type="hidden" name="username" th:value="${#authentication.principal.username}">
+                        <br/>
+                        <label class="col-sm-2" th:text="#{label.user.oldPassword}">old</label>
+                        <span class="col-sm-5"><input class="form-control" id="oldpass" name="oldPassword" type="password" value="" autocomplete="current-password" required /></span>
+                        <span class="col-sm-5"></span>
+                        <br/>
+                        <label class="col-sm-2" th:text="#{label.user.newPassword}">new</label>
+                        <span class="col-sm-5"><input class="form-control" id="password" name="newPassword" type="password" value="" autocomplete="new-password" required />
+                        <div id="newPasswordError" class="invalid-feedback">
+                        </div>
+                        </span>
+
+                        <label class="col-sm-2" th:text="#{label.user.confirmPass}">confirm</label>
+                        <input class="form-control" id="matchPassword" name="matchingPassword" type="password" value="" autocomplete="new-password" required />
+                        <div id="globalError" class="invalid-feedback">
+                        </div>
+
+                        <div class="col-sm-12">
+                            <br/>
+                            <button class="btn btn-primary" type="submit" th:text="#{message.changePassword}">change
+                            </button>
+                            <br/>
+                        </div>
+                    </form>
+                </div>
+                <hr class="my-4">
+                <h6 class="heading-small text-muted mb-4">Danger zone</h6>
+                <div>
+                    <button id="removeAccountBtn" class="btn btn-icon btn-danger" data-toggle="modal" data-target="#modal-remove-account">
+                        <span class="btn-inner--icon"><i class="far fa-trash-alt"></i></span>
+                        <span class="btn-inner--text">Delete my account</span>
+                    </button>
+                </div>
+                <div class="modal fade" id="modal-remove-account" tabindex="-1" role="dialog" aria-labelledby="removeAccountBtn" style="display: none;" aria-hidden="true">
+                    <div class="modal-dialog modal-danger modal-dialog-centered modal-" role="document">
+                        <div class="modal-content bg-gradient-danger">
+                            <div class="modal-header">
+                                <h6 class="modal-title" id="modal-title-notification">Your attention is required</h6>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">×</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="py-3 text-center">
+                                    <i class="ni ni-bell-55 ni-3x"></i>
+                                    <h4 class="heading mt-4">Are you sure?!</h4>
+                                    <p>Removing your account is permanent and will remove all of the custom links you have created on Shrinkly.</p>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button onclick="removeAccount()" type="button" class="btn btn-white">Yes, delete my account</button>
+                                <button type="button" class="btn btn-link text-white ml-auto" data-dismiss="modal">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div th:replace="fragments/footerLightBg :: footerLight"/>
+    </div>
+
+</div>
+
+
+<script th:inline="javascript">
+  var serverContext = '/';
+
+    $(document).ready(function () {
+
+      $(document).ajaxStart( function() {
+        $('#loadingModal').modal('show');
+
+      }).ajaxStop( function() {
+        if (($("#loadingModal").data('bs.modal') || {})._isShown) {
+          setTimeout(function(){
+            $('#loadingModal').modal('hide');
+          }, 500);
+        } else {
+          setTimeout(function(){
+            $('#loadingModal').modal('hide');
+          }, 1000);
+        }
+
+      });
+
+      $('#changePasswordForm').submit(function(event) {
+          savePass(event);
+      });
+
+      $(":password").keyup(function(event){
+        var newPassVal = $("#password").val();
+        if(newPassVal !== $("#matchPassword").val()) {
+          $("#globalError").show().html(/*[[#{PasswordMatches.user}]]*/);
+        } else {
+          $("#globalError").html("").hide();
+        }
+        if (newPassVal.length > 0 && $('#newPasswordError').html().length > 0 && event.which !== 13) {
+          $('#newPasswordError').html('').hide();
+        }
+      });
+
+      options = {
+        common: { minChar:8 },
+        ui: {
+          showVerdictsInsideProgressBar: true,
+          showErrors: true
+        }
+      };
+      $('#password').pwstrength(options);
+    });
+
+    function savePass(event) {
+      event.preventDefault();
+      $('.alert').html('').hide();
+      $('.error-list').html('');
+      $('#newPasswordError').html('').hide();
+      $("#globalError").html('').hide();
+
+      if ($("#password").val() != $("#matchPassword").val()) {
+        $("#globalError").show().html(/*[[#{PasswordMatches.user}]]*/);
+        return;
+      }
+      var formData= $('form').serialize();
+      $.post(serverContext + "user/updatePassword", formData, function(data) {
+        sessionStorage.setItem('message', data.message);
+        window.location.href = serverContext;
+      }).fail(function(data) {
+        $('#loadingModal').modal('hide');
+          if(data.responseJSON.error.indexOf("InvalidOldPassword") > -1) {
+            $("#errormsg").show().append(data.responseJSON.message);
+          } else if (data.responseJSON.error.indexOf("InternalError") > -1) {
+            $("#errormsg").show().append(data.responseJSON.message);
+          } else {
+            var errors = $.parseJSON(data.responseJSON.message);
+            $.each( errors, function( index,item ) {
+              if (item.field === 'newPassword') {
+                $("#"+item.field+"Error").show().append(item.defaultMessage+"<br/>");
+              } else {
+                $("#globalError").show().html(item.defaultMessage);
+              }
+            });
+          }
+        });
+    }
+
+    function removeAccount() {
+      $('#modal-remove-account').modal('hide');
+
+      $.post(serverContext + "user/remove", function(data) {
+        var msg = data.message;
+        sessionStorage.setItem('message', msg);
+
+        // success - redirect user to home
+        window.location.href = serverContext;
+      }).fail(function(data) {
+        var errorMsg = data.responseJSON.error;
+        $("#globalError").show().html(errorMsg);
+      });
+
+
+    }
+
+</script>
+</body>
+</html>

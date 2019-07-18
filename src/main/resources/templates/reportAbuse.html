@@ -1,0 +1,146 @@
+<!DOCTYPE HTML>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+<head>
+    <noscript th:replace="fragments/header :: head" />
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+</head>
+<body>
+
+<div th:replace="fragments/header :: sidenav"/>
+
+<!-- Main content -->
+<div class="main-content">
+
+    <div th:replace="fragments/header :: topnav(version='navbar-light',enableMobileMenu=false)"/>
+
+    <!-- Page content -->
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col">
+                <div class="jumbotron jumbotron-fluid mt-4">
+                    <div class="container">
+                        <h1 class="display-4">Report Abuse on Shrinkly.net</h1>
+                        <p class="lead">Please enter a short code in the form below that is violating Shrinkly's <a href="/policy">policies</a>.</p>
+                        <div id="reportSuccess" class="alert alert-success alert-dismissible fade show" style="display: none;" role="alert">
+                            <span class="alert-inner--icon"><i class="ni ni-like-2"></i></span>
+                            <span class="alert-inner--text"><strong>Success!</strong> <span id="reportMessage"></span></span>
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <form id="reportForm">
+                                    <div class="form-group">
+                                        <label for="shortCode">Short Code</label>
+                                        <input name="shortCode" type="text" class="form-control" id="shortCode" placeholder="Short code to report" required>
+                                        <div id="shortCodeError" class="invalid-feedback ml-3">
+                                            Please enter a valid short code.
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                            <div class="g-recaptcha" th:attr="data-sitekey=${@captchaSettings.getSite()}" data-callback="onReCaptchaSuccess" data-expired-callback="onReCaptchaExpired"></div>
+                                            <div id="captchaError" class="invalid-feedback mt-1"></div>
+                                    </div>
+
+                                    <button id="submitBtn" type="submit" class="btn btn-primary">Submit</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div th:replace="fragments/footerLightBg :: footerLight"/>
+    </div>
+    <script th:inline="javascript">
+      $(document).ready(function () {
+        $('#reportForm').submit(function(event) {
+          reportAbuse(event);
+        });
+
+        $(document).ajaxStart( function() {
+          $("#submitBtn").prop('disabled', true);
+        }).ajaxStop( function() {
+          $("#submitBtn").delay(300).prop('disabled', false);
+        });
+
+      });
+
+      function reportAbuse(event) {
+        event.preventDefault();
+        $("#shortCodeError").html("").hide();
+        $("#captchaError").html("").hide();
+        $('#shortCode').removeClass('is-invalid');
+
+        var shortCodeVal = $("#shortCode").val();
+
+        if (typeof grecaptcha !== 'undefined') {
+          var resp = grecaptcha.getResponse();
+          if (resp.length == 0) {
+            $("#captchaError").show().html("Please verify that you are not a robot.");
+            return;
+          }
+        }
+
+        if (shortCodeVal.length == 0 || shortCodeVal.length > 50) {
+          $("#shortCode").addClass("is-invalid");
+          $("#shortCodeError").html("Please enter a valid short code.").show();
+          return;
+        }
+
+        $.ajax({
+          type: "POST",
+          url: "/reportAbuse",
+          data: JSON.stringify({ shortCode: shortCodeVal, 'g-recaptcha-response': grecaptcha.getResponse() }),
+          contentType: "application/json; charset=utf-8",
+          dataType: "json",
+          success: function(data) {
+            if (data.message) {
+              $('#reportSuccess').show();
+              $('#reportMessage').html(data.message);
+              $("#shortCode").val('');
+              grecaptcha.reset();
+            }
+          },
+          error: function(jqXHR, textStatus, errorThrown) {
+            grecaptcha.reset();
+
+            var errorMessage = jqXHR.responseJSON.message;
+            var field = jqXHR.responseJSON.field;
+
+            if (jqXHR.responseJSON.error == "InvalidReCaptcha") {
+              $("#captchaError").show().html(jqXHR.responseJSON.message);
+            }
+            if (jqXHR.responseJSON.error == "InternalError") {
+              $("#captchaError").show().html(jqXHR.responseJSON.message);
+            }
+
+            if (field === 'shortCode') {
+              $("#shortCodeError").show().html(errorMessage);
+              $('#shortCode').addClass('is-invalid');
+            }
+            if (field === 'captcha') {
+              $("#captchaError").show().html(errorMessage);
+            }
+          }
+        });
+
+      }
+
+      var onReCaptchaSuccess = function(response) {
+        $("#captchaError").html("").hide();
+      };
+
+      var onReCaptchaExpired = function(response) {
+        $("#captchaError").html("reCaptcha has expired. Please solve a new reCaptcha").show();
+        grecaptcha.reset();
+      };
+
+    </script>
+
+</div>
+
+
+</body>
+</html>

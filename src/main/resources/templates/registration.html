@@ -1,0 +1,250 @@
+<!DOCTYPE HTML>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <noscript th:replace="fragments/header :: head" />
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+</head>
+<body class="bg-default">
+
+<!-- Main content -->
+<div class="main-content">
+
+    <div th:replace="fragments/header :: topnav(version='navbar-dark',enableMobileMenu=true)"/>
+
+    <div class="header bg-gradient-primary py-7 py-lg-8">
+        <div class="container">
+            <div class="header-body text-center mb-7">
+                <div class="row justify-content-center">
+                    <div class="col-lg-5 col-md-6">
+                        <h1 class="text-white" th:text="#{label.form.registration}">Create a New Account</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="separator separator-bottom separator-skew zindex-100">
+            <svg x="0" y="0" viewBox="0 0 2560 100" preserveAspectRatio="none" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                <polygon class="fill-default" points="2560 0 2560 100 0 100"></polygon>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Page content -->
+    <div class="container mt--8 pb-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-5 col-md-7">
+                <div class="card bg-secondary shadow border-0">
+                    <div class="card-body px-lg-5 py-lg-5">
+                        <form id="registrationForm" action="/registration" method="post" role="form">
+                            <div class="form-group">
+                                <div class="input-group input-group-alternative mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="ni ni-single-02"></i></span>
+                                    </div>
+                                    <label for="username" class="sr-only">Username: </label>
+                                    <input id="username" name="username" class="form-control" placeholder="Username" type="text" required>
+                                    <div id="usernameError" class="invalid-feedback ml-4 mb-1"></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="input-group input-group-alternative mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="ni ni-email-83"></i></span>
+                                    </div>
+                                    <label for="email" class="sr-only">Username: </label>
+                                    <input id="email" class="form-control" name="email" placeholder="Email" type="email" required>
+                                    <div id="emailError" class="invalid-feedback ml-4 mb-1"></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div id="passwordGroup" class="input-group input-group-alternative">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                    </div>
+                                    <label for="password" class="sr-only">Password: </label>
+                                    <input id="password" class="form-control" name="password" placeholder="Password" type="password" required>
+                                </div>
+                                <div id="passwordError" class="invalid-feedback"></div>
+                                <small id="passwordHelpBlock" class="form-text text-muted text-center">
+                                    Your password must be at least 8 characters long
+                                </small>
+                            </div>
+                            <div id="pwd-container" class="form-group">
+                                <div class="font-italic pwstrength_viewport_progress"></div>
+                            </div>
+                            <div class="form-group">
+                                <div class="input-group input-group-alternative">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="far fa-key"></i></span>
+                                    </div>
+                                    <label for="matchPassword" class="sr-only">Matching Password: </label>
+                                    <input id="matchPassword" class="form-control" name="matchingPassword" placeholder="Confirm Password" type="password" required>
+                                    <div id="globalError" class="invalid-feedback ml-4 mb-1"></div>
+                                </div>
+                            </div>
+                            <div class="row my-4">
+                                <div class="col-12">
+                                        <div class="g-recaptcha col-sm-3" th:attr="data-sitekey=${@captchaSettings.getSite()}" data-callback="onReCaptchaSuccess" data-expired-callback="onReCaptchaExpired"></div>
+                                        <div id="captchaError" class="alert alert-danger mt-1" style="display:none"></div>
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <button id="submitBtn" type="submit" class="btn btn-primary my-4" th:text="#{label.form.createAccountBtn}">Create account</button>
+                                <small id="policiesAcceptance" class="form-text text-muted text-center">
+                                    By creating an account, you agree to Shrinkly's <a th:href="@{/policy}">Terms of Use</a> and <a th:href="@{/privacy}">privacy policy</a>
+                                </small>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div th:replace="fragments/footerDarkBg :: footerDark"/>
+
+
+<script th:inline="javascript">
+  var serverContext = '/';
+
+    $(document).ready(function () {
+
+      $(document).ajaxStart( function() {
+        $("#submitBtn").prop('disabled', true);
+      }).ajaxStop( function() {
+        $("#submitBtn").delay(300).prop('disabled', false);
+      });
+
+      $('#registrationForm').submit(function(event) {
+        register(event);
+      });
+
+      $(":password").keyup(function(){
+        var len = $("#password").val().length;
+        var value = $("#password").val();
+        if (len > 7) {
+          $("#passwordHelpBlock").hide();
+        } else {
+          $("#passwordHelpBlock").show();
+        }
+
+        // if (shrinklyUtil.hasNoSpecialChars(value) && len > 1) {
+        //   $("#passwordError").html("Please add at least one special character. (!, @, #, $, etc.)").show();
+        // } else {
+        //   $("#passwordError").html("").hide();
+        // }
+
+        if ($("#password").val() != $("#matchPassword").val()) {
+          $("#globalError").show().html(/*[[#{PasswordMatches.user}]]*/);
+        }else{
+          $("#globalError").html("").hide();
+        }
+      });
+      var options = {};
+
+      options = {
+        common: { minChar:8 },
+        rules: {
+          activated: {
+            wordNotEmail: true,
+            wordMinLength: true,
+            wordMaxLength: false,
+            wordInvalidChar: true,
+            wordSimilarToUsername: true,
+            wordSequences: true,
+            wordTwoCharacterClasses: false,
+            wordRepetitions: false,
+            wordLowercase: true,
+            wordUppercase: true,
+            wordOneNumber: true,
+            wordThreeNumbers: true,
+            wordOneSpecialChar: false,
+            wordTwoSpecialChar: false,
+            wordUpperLowerCombo: true,
+            wordLetterNumberCombo: true,
+            wordLetterNumberCharCombo: true
+          }
+        },
+        ui: {
+          container: "#pwd-container",
+          viewports: {
+            progress: ".pwstrength_viewport_progress"
+          },
+          showVerdictsInsideProgressBar: true,
+          showPopover: true,
+          showErrors: true
+        }
+      };
+      $('#password').pwstrength(options);
+    });
+
+    function register(event) {
+      event.preventDefault();
+      $(".alert").html("").hide();
+      $(".error-list").html("");
+      $("#passwordGroup").removeClass("has-error");
+      var passVal = $("#password").val();
+
+      if (typeof grecaptcha !== 'undefined') {
+        var resp = grecaptcha.getResponse();
+        if (resp.length == 0) {
+          $("#captchaError").show().html("Please verify that you are not a robot.");
+          return;
+        }
+      }
+      if(passVal != $("#matchPassword").val()) {
+        $("#globalError").show().html(/*[[#{PasswordMatches.user}]]*/);
+        return;
+      }
+
+      // if (shrinklyUtil.hasNoSpecialChars(passVal)) {
+      //   $("#passwordGroup").addClass("has-error");
+      //   $("#passwordError").html("Please add at least one special character. (!, @, #, $, etc.)").show();
+      //   $("#passwordGroup").effect("shake");
+      //   return;
+      // }
+
+      var formData= $('form').serialize();
+      $.post(serverContext + "registration", formData, function(data) {
+        if(data.message == "success"){
+          window.location.href = serverContext + "successRegister";
+        }
+      })
+        .fail(function(data) {
+          grecaptcha.reset();
+          if (data.responseJSON.error.indexOf("MailError") > -1) {
+            window.location.href = serverContext + "emailError.html";
+          } else if(data.responseJSON.error == "InvalidReCaptcha"){
+            $("#captchaError").show().html(data.responseJSON.message);
+          } else if(data.responseJSON.error == "UserAlreadyExist") {
+            $("#usernameError").show().html(data.responseJSON.message);
+          } else if(data.responseJSON.error.indexOf("InternalError") > -1){
+            window.location.href = serverContext + "login?message=" + data.responseJSON.message;
+          } else {
+            var errors = $.parseJSON(data.responseJSON.message);
+            $.each( errors, function( index,item ){
+              if (item.field) {
+                $("#"+item.field+"Error").show().append(item.defaultMessage+"<br/>");
+              } else {
+                $("#globalError").show().append(item.defaultMessage+"<br/>");
+              }
+
+            });
+          }
+        });
+    }
+
+  var onReCaptchaSuccess = function(response) {
+    $("#captchaError").html("").hide();
+  };
+
+  var onReCaptchaExpired = function(response) {
+    $("#captchaError").html("reCaptcha has expired. Please solve a new reCaptcha").show();
+    grecaptcha.reset();
+  };
+
+</script>
+
+</body>
+</html>

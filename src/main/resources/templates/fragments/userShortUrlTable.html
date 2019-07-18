@@ -1,0 +1,207 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+<head>
+</head>
+<body>
+
+<div th:fragment="shortUrlTable" th:remove="tag">
+
+<div class="card shadow" sec:authorize="isAuthenticated()">
+    <script id="newShortUrlTableTemplate" type="text/x-handlebars-template">
+        <tr>
+        <th scope="row" class="origUrl">
+            <a target="_blank" href="{{fullUrl}}">{{fullUrl}}</a>
+        </th>
+        <td>
+            <span>{{dateAdded}}</span>
+        </td>
+        <td>
+            <a target="_blank" href="{{shortUrl}}">{{shortUrl}}</a>
+            <button id="copybtn{{id}}" class="btn btn-secondary btn-sm ml-2" data-clipboard-text="{{shortUrl}}" data-toggle="tooltip" data-placement="top" title="Copied short url to clipboard">
+                <i class="fa fa-clipboard" aria-hidden="true"></i>
+            </button>
+        </td>
+        <td>
+            <span>{{shortClicks}}</span>
+        </td>
+        <td class="text-right">
+            <div class="dropdown">
+                <a class="btn btn-sm btn-icon-only text-light" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-ellipsis-v"></i>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
+                    <a class="dropdown-item" href="/shrinklyAnalytics/{{shortCode}}">See Analytics data</a>
+                    <a class="dropdown-item" href="#" data-toggle="modal" data-target="#qrmodal{{id}}">Get QR code</a>
+                </div>
+            </div>
+
+            <div class="modal fade" id="qrmodal{{id}}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">QR Code for {{shortUrl}}</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="qrCodeModal" id="qrcode{{id}}"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </td>
+        </tr>
+    </script>
+
+
+    <div class="card-header border-0">
+        <h3 class="mb-0">Your Shrinkly Links</h3>
+    </div>
+    <div class="table-responsive">
+        <table id="userShortUrlTable" class="table align-items-center table-flush">
+            <thead class="thead-light">
+            <tr>
+                <th scope="col" class="origUrl">Original URL</th>
+                <th scope="col">
+                    <span th:if="${dateSortDir == 'ASC'}" th:remove="tag">
+                        <a title="Sort by date added descending" href="/">Created <i class="fas fa-sort-amount-up"></i></a>
+                    </span>
+                    <span th:if="${dateSortDir == 'DESC'}" th:remove="tag">
+                        <a title="Sort by date ascending" href="/?sort=dateAdded&dateAdded.dir=asc">Created <i class="fas fa-sort-amount-down"></i></a>
+                    </span>
+                </th>
+                <th scope="col">Short URL</th>
+                <th scope="col">All clicks</th>
+                <th scope="col"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="shortUrl : ${shortUrls.content}">
+                <th scope="row" class="origUrl">
+                    <a target="_blank" th:href="${shortUrl.fullUrl}" th:text="${shortUrl.fullUrl}"></a>
+                </th>
+                <td>
+                    <span>
+                        <script th:inline="javascript">
+                                var options = { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' };
+                                var dateAddedStr = /*[[${shortUrl.dateAdded}]]*/
+                                var d = Date.parse(dateAddedStr + 'Z');
+                                var expiryDate = new Date(d);
+                                document.write(expiryDate.toLocaleString('en-US', options));
+                        </script>
+                    </span>
+                    <span th:if="${shortUrl.expiryDate}" th:remove="tag">
+                        <span class="expirationNote">
+                            Expires
+                            <script th:inline="javascript">
+                                var options = { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' };
+                                var expiryDateStr = /*[[${shortUrl.expiryDate}]]*/
+                                var d = Date.parse(expiryDateStr + 'Z');
+                                var expiryDate = new Date(d);
+                                document.write(expiryDate.toLocaleString('en-US', options));
+                            </script>
+                        </span>
+                    </span>
+                </td>
+                <td>
+                    <a target="_blank" th:href="${shortUrl.shortUrl}" th:text="${shortUrl.shortUrl}"></a>
+                    <button th:id="${'copybtn' + shortUrl.id}" class="btn btn-secondary btn-sm ml-2" th:attr="data-clipboard-text=${shortUrl.shortUrl}" data-toggle="tooltip" data-placement="top" title="Copied short url to clipboard">
+                        <i class="fa fa-clipboard" aria-hidden="true"></i>
+                    </button>
+                </td>
+                <td>
+                    <span th:text="${shortUrl.clicks}"></span>
+                </td>
+                <td class="text-right">
+                    <div class="dropdown">
+                        <a class="btn btn-sm btn-icon-only text-light" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
+                            <a class="dropdown-item" th:href="${'/shrinklyAnalytics/' + shortUrl.shortCode}">See Analytics data</a>
+                            <a class="dropdown-item" href="#" data-toggle="modal" th:attr="data-target=${'#qrmodal' + shortUrl.id}">Get QR code</a>
+                        </div>
+                    </div>
+
+                    <!-- Modal -->
+                    <div class="modal fade" th:id="${'qrmodal' + shortUrl.id}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" th:text="${'QR Code for ' + shortUrl.shortUrl}"></h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="qrCodeModal" th:id="${'qrcode' + shortUrl.id}"></div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script th:inline="javascript">
+                      // initialize copy button
+                      $(document).ready(function () {
+                        var btnId = /*[[${shortUrl.id}]]*/
+                        var clipboard = new ClipboardJS('#copybtn' + btnId);
+                        $('#copybtn' + btnId).tooltip({ trigger: 'manual' });
+
+                        $('#copybtn' + btnId).bind( "click", function() {
+                          $('#copybtn' + btnId).tooltip('show');
+                          setTimeout(function(){
+                            $('#copybtn' + btnId).tooltip('hide');
+                          }, 1200);
+                        });
+
+                        var qrcode = new QRCode(document.getElementById("qrcode" + btnId), {
+                          width : 100,
+                          height : 100
+                        });
+                        var elText = /*[[${shortUrl.shortUrl}]]*/
+
+                        try { qrcode.makeCode(encodeURI(elText));} catch (e) { }
+
+                      });
+                    </script>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer py-4">
+        <nav th:if="${shortUrls.totalPages > 0}" aria-label="...">
+            <ul class="pagination justify-content-end mb-0">
+                <noscript th:each="pageNumber, iter : ${pageNumbers}" th:remove="tag">
+                    <li class="page-item" th:classappend="${shortUrls.number == 0} ? disabled" th:if="${iter.index == 0}">
+                        <a class="page-link" th:href="@{/(size=${shortUrls.size}, page=${shortUrls.number-1})}">
+                            <i class="fas fa-angle-left"></i>
+                            <span class="sr-only">Previous</span>
+                        </a>
+                    </li>
+                    <li class="page-item" th:classappend="${pageNumber==shortUrls.number + 1} ? active">
+                        <a class="page-link" th:href="@{/(size=${shortUrls.size}, page=${pageNumber-1})}"
+                           th:text="${pageNumber}"></a>
+                    </li>
+                    <li class="page-item" th:classappend="${shortUrls.number == shortUrls.totalPages-1} ? disabled" th:if="${iter.index == shortUrls.totalPages - 1}">
+                        <a class="page-link" th:href="@{/(size=${shortUrls.size}, page=${shortUrls.number+1})}">
+                            <i class="fas fa-angle-right"></i>
+                            <span class="sr-only">Next</span>
+                        </a>
+                    </li>
+                </noscript>
+            </ul>
+        </nav>
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE HTML>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+<head>
+    <noscript th:replace="fragments/header :: head" />
+</head>
+<body>
+
+<div th:replace="fragments/header :: sidenav"/>
+
+<!-- Main content -->
+<div class="main-content">
+    <div th:replace="fragments/header :: topnav(version='navbar-dark', enableMobileMenu=false)"/>
+
+    <div th:replace="fragments/newShortUrlForm :: shortUrlForm"/>
+        <!-- Modal -->
+        <div class="modal fade" id="homeMessageModal" tabindex="-1" role="dialog" aria-labelledby="homeMessageTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="homeMessageTitle">Good news!</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <span id="homeMessage" th:text="${message}"></span>
+                        <div th:if="${param.message}">
+                            <span id="homeMessageParam" th:text="${param.message}"></span>
+                        </div>
+                        <div sec:authorize="hasAuthority('CHANGE_PASSWORD_PRIVILEGE') && !hasRole('ROLE_USER')">
+                            <span id="homeMessagePendingReset">Your account currently has a password reset pending. Please complete the reset to remove this message.</span>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <!-- Page content -->
+    <div class="container-fluid mt--7">
+        <div class="row mt-5">
+            <div class="col" sec:authorize="!isAuthenticated()">
+                <div class="jumbotron jumbotron-fluid mt-5">
+                    <div class="container">
+                        <h1 class="display-4">What is Shrinkly?</h1>
+                        <p class="lead">People share a lot of links online. Shrinkly is just a way to shorten those links into a smaller more sharable form.</p>
+                        <p class="lead">In addition to downsizing links, by registering for a free account, we can provide your links with:</p>
+                        <ul>
+                            <li class="mb-3">A custom link path. Choose what you want your short url to be even use emojis &#x2764;&#xFE0F;️! Shrinkly.net/yourLink </li>
+                            <li>Click analytics - dig into the stats behind who is clicking on your link.</li>
+                        </ul>
+                        <h2>What's the advantage of being signed in?</h2>
+                        <p><strong>Signed in</strong></p>
+                        <ul>
+                            <li class="mb-3">Your links are saved to your account for later retrieval </li>
+                            <li class="mb-3">Access more detail statistics about who is clicking on your links.</li>
+                        </ul>
+                        <p><strong>Signed out</strong></p>
+                        <ul>
+                            <li class="mb-3">Your short links won’t be displayed again until you regenerate them. </li>
+                            <li class="mb-3">The same short URL is reused each time a long URL is shortened by you or someone else.</li>
+                        </ul>
+                        <h2>Report an abusive short link</h2>
+                        <p>Report abusive short links through the following <a th:href="@{/reportAbuse}">form</a>.</p>
+
+                    </div>
+                </div>
+            </div>
+            <div class="col" sec:authorize="isAuthenticated()">
+                <div th:replace="fragments/userShortUrlTable :: shortUrlTable" />
+            </div>
+        </div>
+        <div th:replace="fragments/footerLightBg :: footerLight"/>
+    </div>
+
+</div>
+
+
+</body>
+</html>

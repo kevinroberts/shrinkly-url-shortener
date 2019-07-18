@@ -1,0 +1,103 @@
+<!DOCTYPE HTML>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <noscript th:replace="fragments/header :: head"/>
+</head>
+<body>
+
+<div th:replace="fragments/header :: sidenav"/>
+
+<!-- Main content -->
+<div class="main-content">
+    <div id="loadingModal" class="modal fade bd-modal-lg" data-backdrop="static" data-keyboard="false" tabindex="-1"
+         style="display: none;" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="mb-3 processingText">Processing request</div>
+                <span style="width: 48px" class="fa fa-spinner fa-spin fa-3x"></span>
+            </div>
+        </div>
+    </div>
+
+
+    <div th:replace="fragments/header :: topnav(version='navbar-light',enableMobileMenu=false)"/>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col">
+                <div class="header-title">
+                    <h1 th:inline="text">Hello Administrator, [[${#httpServletRequest.remoteUser}]]!</h1>
+                </div>
+                <div>
+                    <h3>Logged in Users</h3>
+
+
+                    <div class="table-responsive">
+                        <table class="table align-items-center table-dark">
+                            <thead class="thead-dark">
+                            <tr>
+                                <th scope="col">Username</th>
+                                <th scope="col">Date added</th>
+                                <th scope="col">Last login</th>
+                                <th scope="col">Email</th>
+                                <th scope="col">User id</th>
+                                <th scope="col"></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="user : ${loggedUsers}">
+                                <th scope="row">
+                                    <div class="media align-items-center">
+                                        <a href="#" class="avatar rounded-circle mr-3">
+                                            <img alt="Image placeholder" th:src="${user.profileImage}">
+                                        </a>
+                                        <div class="media-body">
+                                            <span class="mb-0 text-sm" th:text="${user.username}"></span>
+                                        </div>
+                                    </div>
+                                </th>
+                                <td>
+                                    <span th:text="${user.dateAdded}"></span>
+                                </td>
+                                <td>
+                                    <span th:text="${user.lastLogin}"></span>
+                                </td>
+                                <td>
+                                    <span th:text="${user.email}"></span>
+                                </td>
+                                <td>
+                                    <span th:text="${user.userId}"></span>
+                                </td>
+                                <td class="text-right">
+                                    <div class="dropdown">
+                                        <a class="btn btn-sm btn-icon-only text-light" href="#" role="button"
+                                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
+                                            <a class="dropdown-item" href="#">Action</a>
+                                            <a class="dropdown-item" href="#">Another action</a>
+                                            <a class="dropdown-item" href="#">Something else here</a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+
+                    </div>
+
+
+                </div>
+                <hr class="my-4">
+                <h6 class="heading-small text-muted mb-4">Danger zone</h6>
+            </div>
+        </div>
+
+        <div th:replace="fragments/footerLightBg :: footerLight"/>
+    </div>
+
+</div>
+
+</body>
+</html>

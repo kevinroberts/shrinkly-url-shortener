@@ -1,0 +1,67 @@
+<!DOCTYPE HTML>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <noscript th:replace="fragments/header :: head" />
+</head>
+<body class="bg-default">
+
+
+<!-- Main content -->
+<div class="main-content">
+    <div th:replace="fragments/header :: topnav(version='navbar-dark',enableMobileMenu=true)"/>
+
+    <div class="header bg-gradient-primary py-7 py-lg-8">
+        <div class="separator separator-bottom separator-skew zindex-100">
+            <svg x="0" y="0" viewBox="0 0 2560 100" preserveAspectRatio="none" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                <polygon class="fill-default" points="2560 0 2560 100 0 100"></polygon>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Page content -->
+    <div class="container mt--8 pb-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-8">
+                <div class="card bg-secondary shadow border-0">
+                    <div class="card-body px-lg-5 py-lg-5">
+                        <div th:if="${param.message}">
+                            <div class="alert alert-info" th:text="${param.message}">
+                                message
+                            </div>
+                        </div>
+
+                        <h1 th:text="#{label.form.resendRegistrationToken}">resend</h1>
+
+                        <button class="btn btn-primary" onclick="resendToken()">Resend registration token</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<div th:replace="fragments/footerDarkBg :: footerDark"/>
+
+<script th:inline="javascript">
+  var serverContext = '/';
+
+  function resendToken(){
+    var token = [[${param.token}]];
+    $.get(serverContext + "user/resendRegistrationToken?token="+token, function(data){
+      window.location.href = serverContext +"login?message=" + data.message;
+    })
+      .fail(function(data) {
+        if(data.responseJSON.error.indexOf("MailError") > -1) {
+          window.location.href = serverContext + "emailError.html";
+        } else {
+          window.location.href = serverContext + "login?message=" + data.responseJSON.message;
+        }
+      });
+  }
+
+</script>
+
+</body>
+</html>

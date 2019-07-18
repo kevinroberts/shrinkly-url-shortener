@@ -1,0 +1,117 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+<head>
+</head>
+<body>
+
+<div th:fragment="shortUrlForm" th:remove="tag">
+    <!-- Header -->
+    <div class="header bg-gradient-primary pb-8 pt-5 pt-md-8">
+        <div class="container-fluid">
+            <div class="header-body">
+                <!-- Card stats -->
+                <div class="row">
+                    <div class="col-xl-8 col-lg-8 center">
+                        <div class="card card-stats mb-4 mb-xl-0">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col">
+                                        <h4 id="shrinkTitle" class="card-title mb-0">Shrink <span id="shrinkSubtitle">your link</span></h4>
+                                        <form id="shrinkForm" class="mt-4" novalidate>
+                                            <div class="form-row align-items-center">
+                                                <div class="col-auto" sec:authorize="isAuthenticated()">
+                                                    <span>Shrinkly.net/</span>
+                                                </div>
+                                                <div class="col" sec:authorize="isAuthenticated()">
+                                                    <label for="customAlias" class="sr-only">Custom alias for your short url</label>
+                                                    <input name="customAlias" type="text" class="form-control" id="customAlias" placeholder="Custom short code e.g. cattywumpus">
+                                                </div>
+                                                <div id="customAliasError" class="invalid-feedback ml-8" sec:authorize="isAuthenticated()">
+                                                   Invalid custom url alias.
+                                                </div>
+                                                <div class="w-100 mb-3" sec:authorize="isAuthenticated()"></div>
+                                                <div class="col">
+                                                    <label for="fullUrlInput" class="sr-only">Original URL</label>
+                                                    <input name="url" type="text" class="form-control" id="fullUrlInput" placeholder="Paste a URL here" autofocus="autofocus" />
+                                                </div>
+                                                <div class="col-auto">
+                                                    <button id="shrinkFormSubmitBtn" type="submit" class="btn btn-primary">Shrink it</button>
+                                                </div>
+                                            </div>
+
+                                        </form>
+                                    </div>
+                                    <div id="urlError" class="invalid-feedback ml-3">
+                                        Please enter a valid URL.
+                                    </div>
+                                </div>
+
+                                <p class="mt-3 ml-3" sec:authorize="isAuthenticated()">
+                                    <label class="custom-toggle">
+                                        <input id="advancedOptions" type="checkbox">
+                                        <span class="custom-toggle-slider rounded-circle"></span>
+                                    </label>
+                                    <label id="advancedOptionsLabel" class="toggleLabel" for="advancedOptions">Show Advanced options</label>
+                                </p>
+                                <div id="advancedOptionsCollapsable" class="col collapse" sec:authorize="isAuthenticated()">
+                                    <div class="form-group row mb-2">
+                                        <label class="col-auto col-form-label">Link expiration</label>
+                                        <label title="Enable link expiration" class="custom-toggle expiration-toggle-cls">
+                                            <input id="toggleExpiration" type="checkbox">
+                                            <span class="custom-toggle-slider rounded-circle"></span>
+                                        </label>
+                                        <div id="dateOptionsCollapsable" class="col-sm-4 input-group input-group-alternative collapse">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="ni ni-calendar-grid-58"></i></span>
+                                            </div>
+                                            <input id="expirationDate" class="form-control datepicker" placeholder="Select date" type="text" value="">
+                                        </div>
+                                        <div id="timeOptionsCollapsable" class="col-sm-3 collapse">
+                                            <input class="form-control" type="time" id="expirationTime" name="appt" value="">
+                                        </div>
+                                        <div id="customExpiryError" class="invalid-feedback text-center mr-5">
+                                            Invalid expiration date
+                                        </div>
+                                    </div>
+                                    <p class="mt-0 mb-0 text-sm">
+                                        <span>Set your URL to automatically expire after a specified date and time.</span>
+                                    </p>
+                                </div>
+
+                                <div id="shortenSuccess" class="alert alert-default mt-2" style="display: none;" role="alert">
+                                    <strong>Success here's your new shortened URL! &#x1F64C;</strong>
+                                    <div sec:authorize="!isAuthenticated()">
+                                        Looking to create custom links and view analytics with shrinkly?
+                                        <a class="btn btn-secondary btn-sm ml-2" th:href="@{/registration}">register for free!</a>
+                                    </div>
+                                    <div id="newShortUrlBlock"></div>
+                                    <script id="newShortUrlTemplate" type="text/x-handlebars-template">
+                                        <div class="newShortBlock pt-1 row align-items-center">
+                                            <div class="col-auto">
+                                                <small class="text-muted">{{fullUrl}}</small>
+                                                <a class="shortUrlLink" target="_blank" href="{{shortUrl}}">{{shortUrl}}</a>
+                                                <button id="{{id}}btn" class="btn btn-secondary btn-sm ml-2" data-clipboard-text="{{shortUrl}}" data-toggle="tooltip" data-placement="top" title="Copied short url to clipboard">
+                                                    <i class="fa fa-clipboard" aria-hidden="true"></i>
+                                                </button>
+                                            </div>
+                                            <div class="col">
+                                                <div class="text-muted"><i class="ni ni-chart-bar-32"></i> {{shortClicks}}</div>
+                                            </div>
+                                        </div>
+                                    </script>
+                                </div>
+                                <p class="mt-3 mb-0 text-muted text-sm">
+                                    <span>Consider all URLs and click analytics to be publicly accessible.</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

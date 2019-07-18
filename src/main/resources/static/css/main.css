@@ -1,0 +1,78 @@
+.header-title {
+    padding: 3rem 1.5rem;
+    text-align: center;
+}
+.has-error {
+    border: 1px solid red !important;
+}
+
+.shortUrlLink {
+    color: aqua;
+}
+
+.shortUrlLink:hover {
+     text-decoration: none;
+     color: #23d294;
+ }
+
+.newShortBlock small {
+    display: block;
+}
+
+.jumbotron {
+    background-color: #f8f9fe !important;
+}
+
+.origUrl {
+    max-width: 25vw;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.qrCodeModal {
+    width: 100px;
+    height: 100px;
+    margin-left: auto;
+    margin-top: 15px;
+    margin-right: auto;
+}
+
+.bd-modal-lg .modal-dialog{
+    display: table;
+    position: relative;
+    margin: 0 auto;
+    top: calc(50% - 10px);
+}
+
+.bd-modal-lg .modal-dialog .modal-content{
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.bd-modal-lg .modal-content .processingText{
+    position: relative;
+    right: 2.1rem;
+}
+
+.form-group .progress {
+    height: 12px;
+}
+
+.toggleLabel {
+    padding-left: 10px;
+    position: relative;
+    margin-bottom: 0;
+    bottom: 14px;
+    cursor: pointer;
+}
+.expiration-toggle-cls {
+    top: 11px;
+    margin-right: 10px;
+}
+
+.expirationNote {
+    display: block;
+    font-style: italic;
+}

@@ -1,0 +1,64 @@
+workflows:
+  version: 2
+  build-deploy:
+    jobs:
+      - publish-docker:
+          filters:
+            branches:
+              only: master
+
+version: 2
+jobs:
+  unit-test:
+    docker:
+      - image: circleci/openjdk:11-stretch-node-browsers-legacy
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - hello-spring-mvn-V2-{{ checksum "pom.xml" }}
+            - hello-spring-mvn-V2
+      - run: mvn dependency:go-offline
+      - run:
+          name: Build and unit test
+          command: |
+            mvn test -B \
+              -Dbuild.number=${CIRCLE_BUILD_NUM} \
+              -Dcommit.hash=${CIRCLE_SHA1} \
+              -Dcircle.workflow.guid=${CIRCLE_WORKFLOW_ID} \
+              -Dbuild.user=${CIRCLE_PROJECT_USERNAME} \
+              -Dbuild.repo=${CIRCLE_PROJECT_REPONAME}
+      - save_cache:
+          paths:
+           - ~/.m2
+          key: hello-spring-mvn-V2-{{ checksum "pom.xml" }}
+      - store_test_results:
+          path: target/surefire-reports
+
+
+
+  publish-docker:
+    docker:
+      - image: circleci/openjdk:11-stretch-node-browsers-legacy
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - hello-spring-mvn-V2-{{ checksum "pom.xml" }}
+            - hello-spring-mvn-V2
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run: mvn dependency:go-offline
+      - run: cp .mvn/wrapper/settings.xml ~/.m2/settings.xml
+      - run: echo "<settingsSecurity><master>${maven_security_master}</master></settingsSecurity>" > ~/.m2/settings-security.xml
+      - run:
+          name: Publish Docker image with maven
+          command: |
+            ./mvnw compile install dockerfile:build dockerfile:push -B -DskipTests=true \
+              -Dbuild.number=${CIRCLE_BUILD_NUM} \
+              -Dcommit.hash=${CIRCLE_SHA1} \
+              -Dcircle.workflow.guid=${CIRCLE_WORKFLOW_ID} \
+              -Dbuild.user=${CIRCLE_PROJECT_USERNAME} \
+              -Dbuild.repo=${CIRCLE_PROJECT_REPONAME}
