@@ -17,7 +17,7 @@
     <properties>
         <docker.image.prefix>vinberts</docker.image.prefix>
         <java.version>11</java.version>
-        <undertow.version>2.0.22.Final</undertow.version>
+        <undertow.version>2.0.23.Final</undertow.version>
         <passay.version>1.4.0</passay.version>
         <guava.version>27.0.1-jre</guava.version>
         <aerogear.version>1.0.0</aerogear.version>
