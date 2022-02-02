@@ -23,7 +23,7 @@
         <aerogear.version>1.0.0</aerogear.version>
         <jgravatar.version>1.1</jgravatar.version>
         <browscap.version>1.2.7</browscap.version>
-        <postgresql.version>42.2.5</postgresql.version>
+        <postgresql.version>42.2.25</postgresql.version>
         <flyway.version>6.0.0-beta</flyway.version>
         <commons.text.version>1.6</commons.text.version>
         <!--build properties-->
