@@ -42,12 +42,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -105,106 +103,104 @@ public class ShrinklyApplication {
 
     @PostConstruct
     public void init() {
-        log.info("Running in env mode: " + Arrays.toString(env.getActiveProfiles()));
+        log.info("Running in env mode: {}", Arrays.toString(env.getActiveProfiles()));
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
     }
 
     @PostMapping(value = "/shrink")
     public ResponseEntity<Object> save(@RequestBody Map<String, Object> payload) {
         log.debug("Hit /shrink endpoint");
-        if (payload.containsKey("url")) {
-            final String url = payload.get("url").toString();
-            boolean isCustom = false;
-            boolean isExpiryLink = false;
-            LocalDateTime expiryDateTime = null;
+        // if user is auth-ed store their new short url
+        Authentication auth
+                = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && !(auth instanceof AnonymousAuthenticationToken)) {
 
-            String customAlias = "";
-            if (payload.containsKey("customAlias")) {
-                customAlias = payload.get("customAlias").toString();
-            }
-            if (payload.containsKey("expireLink") && payload.containsKey("expiryDateTime")) {
-                isExpiryLink = Boolean.parseBoolean(payload.get("expireLink").toString());
-                if (isExpiryLink) {
-                    try {
-                        DateTimeFormatter formatter = DateTimeFormatter.RFC_1123_DATE_TIME;
-                        expiryDateTime = LocalDateTime.parse(payload.get("expiryDateTime").toString(), formatter);
-                    } catch (DateTimeParseException e) {
-                        GenericResponse genericResponse = new GenericResponse("Invalid expiration date specified. Please select a new date.","","customExpiry");
-                        return new ResponseEntity<>(genericResponse, HttpStatus.BAD_REQUEST);
-                    }
-                    LocalDateTime now = LocalDateTime.now(Clock.systemUTC());
-                    final long diffSec = Duration.between(now, expiryDateTime).getSeconds();
-                    if (diffSec <= 0L) {
-                        GenericResponse genericResponse = new GenericResponse("Invalid expiration date specified. (Past Date)","","customExpiry");
-                        return new ResponseEntity<>(genericResponse, HttpStatus.BAD_REQUEST);
+
+            if (payload.containsKey("url")) {
+                final String url = payload.get("url").toString();
+                boolean isCustom = false;
+                boolean isExpiryLink = false;
+                LocalDateTime expiryDateTime = null;
+
+                String customAlias = "";
+                if (payload.containsKey("customAlias")) {
+                    customAlias = payload.get("customAlias").toString();
+                }
+                if (payload.containsKey("expireLink") && payload.containsKey("expiryDateTime")) {
+                    isExpiryLink = Boolean.parseBoolean(payload.get("expireLink").toString());
+                    if (isExpiryLink) {
+                        try {
+                            DateTimeFormatter formatter = DateTimeFormatter.RFC_1123_DATE_TIME;
+                            expiryDateTime = LocalDateTime.parse(payload.get("expiryDateTime").toString(), formatter);
+                        } catch (DateTimeParseException e) {
+                            GenericResponse genericResponse = new GenericResponse("Invalid expiration date specified. Please select a new date.", "", "customExpiry");
+                            return new ResponseEntity<>(genericResponse, HttpStatus.BAD_REQUEST);
+                        }
+                        LocalDateTime now = LocalDateTime.now(Clock.systemUTC());
+                        final long diffSec = Duration.between(now, expiryDateTime).getSeconds();
+                        if (diffSec <= 0L) {
+                            GenericResponse genericResponse = new GenericResponse("Invalid expiration date specified. (Past Date)", "", "customExpiry");
+                            return new ResponseEntity<>(genericResponse, HttpStatus.BAD_REQUEST);
+                        }
                     }
                 }
-            }
 
-            if (isValidFullUrl(url) && url.length() <= 2000) {
-                ShortUrl shortUrl;
+                if (isValidFullUrl(url) && url.length() <= 2000) {
+                    ShortUrl shortUrl;
 
-                if (customAlias.length() != 0 && customAlias.length() > 2) {
-                    // validate and attempt to create a new short url with custom alias
-                    if (customAlias.length() > 50) {
-                        GenericResponse genericResponse = new GenericResponse("Please select a custom alias less than 50 characters","","customAlias");
-                        return new ResponseEntity<>(genericResponse, HttpStatus.BAD_REQUEST);
-                    }
-                    if (isValidCustomAlias(customAlias)) {
-                        try {
-                            String newCustomShortCode = URLEncoder.encode(customAlias, StandardCharsets.UTF_8.toString());
+                    if (customAlias.length() != 0 && customAlias.length() > 2) {
+                        // validate and attempt to create a new short url with custom alias
+                        if (customAlias.length() > 50) {
+                            GenericResponse genericResponse = new GenericResponse("Please select a custom alias less than 50 characters", "", "customAlias");
+                            return new ResponseEntity<>(genericResponse, HttpStatus.BAD_REQUEST);
+                        }
+                        if (isValidCustomAlias(customAlias)) {
+                            String newCustomShortCode = URLEncoder.encode(customAlias, StandardCharsets.UTF_8);
                             if (isExpiryLink) {
                                 shortUrl = shortUrlRepository.encodeLongUrlCustomWithExpiration(url, newCustomShortCode, expiryDateTime);
                             } else {
                                 shortUrl = shortUrlRepository.encodeLongUrlCustom(url, newCustomShortCode);
                             }
                             if (shortUrl == null) {
-                                GenericResponse genericResponse = new GenericResponse("The alias you entered has already been used by someone. Please pick something else.","","customAlias");
+                                GenericResponse genericResponse = new GenericResponse("The alias you entered has already been used by someone. Please pick something else.", "", "customAlias");
                                 return new ResponseEntity<>(genericResponse, HttpStatus.BAD_REQUEST);
                             }
                             isCustom = true;
-                        } catch (UnsupportedEncodingException e) {
-                            log.error("Invalid custom alias submitted, " + customAlias, e);
-                            GenericResponse genericResponse = new GenericResponse("You entered an invalid custom alias, please select something else.","","customAlias");
+                        } else {
+                            GenericResponse genericResponse = new GenericResponse("You entered an invalid custom alias, please select something else.", "", "customAlias");
                             return new ResponseEntity<>(genericResponse, HttpStatus.BAD_REQUEST);
                         }
                     } else {
-                        GenericResponse genericResponse = new GenericResponse("You entered an invalid custom alias, please select something else.","","customAlias");
-                        return new ResponseEntity<>(genericResponse, HttpStatus.BAD_REQUEST);
+                        shortUrl = isExpiryLink
+                                ? shortUrlRepository.encodeLongUrlWithExpiration(url, expiryDateTime)
+                                : shortUrlRepository.encodeLongUrl(url);
                     }
-                } else {
-                    shortUrl = getShortUrlForRequest(url, isExpiryLink, expiryDateTime);
-                }
 
-                // get final formatted shrinkly url
-                Map<String, String> valuesMap = new HashMap<>();
-                valuesMap.put("serverUrl", serverUrl);
-                if (isCustom) {
-                    valuesMap.put("id", customAlias);
-                } else {
-                    valuesMap.put("id", shortUrl.getShortenedKey());
-                }
-                StringSubstitutor finalUrlReplacement = new StringSubstitutor(valuesMap);
-                String template = "${serverUrl}/${id}";
-                String shortUrlStr = finalUrlReplacement.replace(template);
+                    // get final formatted shrinkly url
+                    Map<String, String> valuesMap = new HashMap<>();
+                    valuesMap.put("serverUrl", serverUrl);
+                    if (isCustom) {
+                        valuesMap.put("id", customAlias);
+                    } else {
+                        valuesMap.put("id", shortUrl.getShortenedKey());
+                    }
+                    StringSubstitutor finalUrlReplacement = new StringSubstitutor(valuesMap);
+                    String template = "${serverUrl}/${id}";
+                    String shortUrlStr = finalUrlReplacement.replace(template);
 
-                // if user is auth-ed store their new short url
-                Authentication auth
-                        = SecurityContextHolder.getContext().getAuthentication();
-                if (auth != null && !(auth instanceof AnonymousAuthenticationToken)) {
 
                     final User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
                     final UserShortUrl userShortUrl = new UserShortUrl();
 
                     if (SecurityContextHolder.getContext().getAuthentication().getAuthorities().size() == 1) {
                         boolean isPasswordResetUser = false;
-                        for (GrantedAuthority userAuth: SecurityContextHolder.getContext().getAuthentication().getAuthorities()) {
+                        for (GrantedAuthority userAuth : SecurityContextHolder.getContext().getAuthentication().getAuthorities()) {
                             if (userAuth.getAuthority().equals("CHANGE_PASSWORD_PRIVILEGE")) {
                                 isPasswordResetUser = true;
                             }
                         }
                         if (isPasswordResetUser) {
-                            GenericResponse genericResponse = new GenericResponse("Your account is currently pending a password reset request. Please complete the reset to continue using your account.","","customAlias");
+                            GenericResponse genericResponse = new GenericResponse("Your account is currently pending a password reset request. Please complete the reset to continue using your account.", "", "customAlias");
                             return new ResponseEntity<>(genericResponse, HttpStatus.BAD_REQUEST);
                         }
                     }
@@ -226,38 +222,35 @@ public class ShrinklyApplication {
                             }
                         }
                     }
-                }
 
-                if (log.isDebugEnabled()) {
-                    log.debug("Stored " + shortUrlRepository.getTotalStoredUrls() + " urls");
+                    shortUrl.setClicks(shortUrlRepository.getClicksForShortUrl(shortUrl.getShortenedKey()));
+                    shortUrl.setShortUrl(shortUrlStr);
+                    return new ResponseEntity<>(shortUrl, HttpStatus.CREATED);
                 } else {
-                    // increment count of total short urls
-                    shortUrlRepository.incrementCount();
+                    GenericResponse genericResponse = new GenericResponse("Your URL was not valid. Please submit a valid URl.", "", "url");
+                    return new ResponseEntity<>(genericResponse, HttpStatus.BAD_REQUEST);
                 }
-                shortUrl.setClicks(shortUrlRepository.getClicksForShortUrl(shortUrl.getShortenedKey()));
-                shortUrl.setShortUrl(shortUrlStr);
-                return new ResponseEntity<>(shortUrl, HttpStatus.CREATED);
             } else {
-                GenericResponse genericResponse = new GenericResponse("Your URL was not valid. Please submit a valid URl.","","url");
+                GenericResponse genericResponse = new GenericResponse("Please pass a valid url as a parameter.", "", "url");
                 return new ResponseEntity<>(genericResponse, HttpStatus.BAD_REQUEST);
             }
         } else {
-            GenericResponse genericResponse = new GenericResponse("Please pass a valid url as a parameter.","","url");
-            return new ResponseEntity<>(genericResponse, HttpStatus.BAD_REQUEST);
+            GenericResponse genericResponse = new GenericResponse("You must be authenticated in order to shrink new urls", "", "");
+            return new ResponseEntity<>(genericResponse, HttpStatus.UNAUTHORIZED);
         }
 
     }
 
     @PostMapping(value = "/reportAbuse")
-    public ResponseEntity<Object> abusePost(@RequestBody Map<String, Object> payload, HttpServletRequest request) throws UnsupportedEncodingException {
+    public ResponseEntity<Object> abusePost(@RequestBody Map<String, Object> payload, HttpServletRequest request) {
         log.debug("Hit /reportAbuse post endpoint");
 
-        if (!payload.containsKey("g-recaptcha-response")) {
+        if (!payload.containsKey("cf-turnstile-response")) {
             GenericResponse genericResponse = new GenericResponse("Please prove that you are not a robot.","","captcha");
             return new ResponseEntity<>(genericResponse, HttpStatus.BAD_REQUEST);
         }
 
-        captchaService.processResponse(payload.get("g-recaptcha-response").toString());
+        captchaService.processResponse(payload.get("cf-turnstile-response").toString());
 
         if (payload.containsKey("shortCode")) {
 
@@ -268,7 +261,7 @@ public class ShrinklyApplication {
                 return new ResponseEntity<>(genericResponse, HttpStatus.BAD_REQUEST);
             }
 
-            String decodedId = URLEncoder.encode(shortCode, StandardCharsets.UTF_8.toString());
+            String decodedId = URLEncoder.encode(shortCode, StandardCharsets.UTF_8);
             Optional<ShortUrl> optionalShortUrl = shortUrlRepository.getShortCodeIfExists(decodedId);
 
             if (optionalShortUrl.isPresent()) {
@@ -303,7 +296,7 @@ public class ShrinklyApplication {
     public Page<UserShortUrl> findPaginatedShortUrls(@PageableDefault(page = DEFAULT_PAGE_NUMBER, size = DEFAULT_PAGE_SIZE) @SortDefault.SortDefaults({
             @SortDefault(sort = "dateAdded", direction = Sort.Direction.DESC)
     }) Pageable pageable, final UriComponentsBuilder uriBuilder,
-                                                     final HttpServletResponse response) throws UnsupportedEncodingException {
+                                                     final HttpServletResponse response) {
         Authentication auth
                 = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth instanceof AnonymousAuthenticationToken) {
@@ -323,7 +316,7 @@ public class ShrinklyApplication {
         for (UserShortUrl shortUrl: resultPage.getContent()) {
             Map<String, String> valuesMap = new HashMap<>();
             valuesMap.put("serverUrl", serverUrl);
-            String decodedId = URLDecoder.decode(shortUrl.getShortUrl(), StandardCharsets.UTF_8.name());
+            String decodedId = URLDecoder.decode(shortUrl.getShortUrl(), StandardCharsets.UTF_8);
             valuesMap.put("id", decodedId);
             StringSubstitutor finalUrlReplacement = new StringSubstitutor(valuesMap);
             String template = "${serverUrl}/${id}";
@@ -348,10 +341,10 @@ public class ShrinklyApplication {
 
     @RequestMapping(value = "/{id}", method = RequestMethod.GET)
     public void redirect(@PathVariable String id,HttpServletRequest request, HttpServletResponse resp) throws Exception {
-        String encodedId = URLEncoder.encode(id, StandardCharsets.UTF_8.toString());
+        String encodedId = URLEncoder.encode(id, StandardCharsets.UTF_8);
         Optional<ShortUrl> shortUrlOptional = shortUrlRepository.decodeAndIncrementShortUrl(encodedId);
         if (shortUrlOptional.isPresent()) {
-            log.debug("Got short code from request: " + shortUrlOptional.get().toString());
+            log.debug("Got short code from request: {}", shortUrlOptional.get());
             // add analytics data to db
             LocalDateTime expiryDate = LocalDateTime.now();
 
@@ -359,6 +352,10 @@ public class ShrinklyApplication {
                 expiryDate = expiryDate.plusSeconds(shortUrlOptional.get().getExpirationInSeconds());
             }
 
+            // Click counts live in Redis (incremented atomically above). The Postgres
+            // clicks column is no longer written on every hit; it is reconciled in
+            // batch by ClickCountReconcileTask so the redirect path stays a Redis-only
+            // hot path with no synchronous DB write.
             analyticsService.addAnalyticsForShortUrl(shortUrlOptional.get().getShortenedKey(),
                     Optional.ofNullable(request.getHeader("User-Agent")),
                     getClientIP(request),
@@ -381,33 +378,7 @@ public class ShrinklyApplication {
         }
 
         shortUrlService.saveNewShortUrl(userShortUrl);
-        log.debug("Saved new short url for user: " + user.getUsername() + " is custom: " + isCustom);
-    }
-
-    private ShortUrl getShortUrlForRequest(String url, boolean isExpiryLink, LocalDateTime expiryDate) {
-        ShortUrl shortUrl;
-        int size;
-        BigInteger totalStored = shortUrlRepository.getTotalStoredUrls();
-        if (totalStored.compareTo(new BigInteger("3500")) < 0) {
-            size = 2;
-        } else if (totalStored.compareTo(new BigInteger("3500")) > 0
-                && totalStored.compareTo(new BigInteger("230000")) < 0 ) {
-            size = 3;
-        } else if (totalStored.compareTo(new BigInteger("230000")) > 0
-                && totalStored.compareTo(new BigInteger("14000000")) < 0) {
-            size = 4;
-        } else if (totalStored.compareTo(new BigInteger("14000000")) > 0
-                && totalStored.compareTo(new BigInteger("900000000")) < 0) {
-            size = 5;
-        } else {
-            size = 6;
-        }
-        if (isExpiryLink) {
-            shortUrl = shortUrlRepository.encodeLongUrlWithExpiration(url, size, expiryDate);
-        } else {
-            shortUrl = shortUrlRepository.encodeLongUrl(url, size);
-        }
-        return shortUrl;
+        log.debug("Saved new short url for user: {} is custom: {}", user.getUsername(), isCustom);
     }
 
 }

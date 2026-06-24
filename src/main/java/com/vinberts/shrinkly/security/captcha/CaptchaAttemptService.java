@@ -10,13 +10,13 @@ import java.util.concurrent.TimeUnit;
 /**
  *
  */
-@Service("reCaptchaAttemptService")
-public class ReCaptchaAttemptService {
+@Service("captchaAttemptService")
+public class CaptchaAttemptService {
 
     private final int MAX_ATTEMPT = 4;
     private LoadingCache<String, Integer> attemptsCache;
 
-    public ReCaptchaAttemptService() {
+    public CaptchaAttemptService() {
         super();
         attemptsCache = CacheBuilder.newBuilder().expireAfterWrite(4, TimeUnit.HOURS).build(new CacheLoader<String, Integer>() {
             @Override
@@ -26,11 +26,11 @@ public class ReCaptchaAttemptService {
         });
     }
 
-    public void reCaptchaSucceeded(final String key) {
+    public void captchaSucceeded(final String key) {
         attemptsCache.invalidate(key);
     }
 
-    public void reCaptchaFailed(final String key) {
+    public void captchaFailed(final String key) {
         int attempts = attemptsCache.getUnchecked(key);
         attempts++;
         attemptsCache.put(key, attempts);

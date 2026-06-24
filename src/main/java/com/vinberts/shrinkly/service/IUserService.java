@@ -17,6 +17,8 @@ public interface IUserService {
 
     User registerNewUserAccount(UserDto accountDto) throws UserAlreadyExistException;
 
+    User createEnabledUser(String email, String username, String rawPassword);
+
     User getUser(String verificationToken);
 
     void saveRegisteredUser(User user);

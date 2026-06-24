@@ -12,12 +12,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- *
+ * Response body of the Cloudflare Turnstile siteverify endpoint.
+ * https://developers.cloudflare.com/turnstile/get-started/server-side-validation/
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonPropertyOrder({ "success", "challenge_ts", "hostname", "error-codes" })
-public class GoogleResponse {
+@JsonPropertyOrder({ "success", "challenge_ts", "hostname", "error-codes", "action", "cdata" })
+public class TurnstileResponse {
 
     @JsonProperty("success")
     private boolean success;
@@ -27,23 +28,31 @@ public class GoogleResponse {
     private String hostname;
     @JsonProperty("error-codes")
     private ErrorCode[] errorCodes;
+    @JsonProperty("action")
+    private String action;
+    @JsonProperty("cdata")
+    private String cdata;
 
 
     static enum ErrorCode {
-        MissingSecret, InvalidSecret, MissingResponse, InvalidResponse;
+        MissingSecret, InvalidSecret, MissingResponse, InvalidResponse,
+        BadRequest, TimeoutOrDuplicate, InternalError, Unknown;
 
-        private static Map<String, ErrorCode> errorsMap = new HashMap<>(4);
+        private static Map<String, ErrorCode> errorsMap = new HashMap<>(7);
 
         static {
             errorsMap.put("missing-input-secret", MissingSecret);
             errorsMap.put("invalid-input-secret", InvalidSecret);
             errorsMap.put("missing-input-response", MissingResponse);
             errorsMap.put("invalid-input-response", InvalidResponse);
+            errorsMap.put("bad-request", BadRequest);
+            errorsMap.put("timeout-or-duplicate", TimeoutOrDuplicate);
+            errorsMap.put("internal-error", InternalError);
         }
 
         @JsonCreator
         public static ErrorCode forValue(final String value) {
-            return errorsMap.get(value.toLowerCase());
+            return errorsMap.getOrDefault(value.toLowerCase(), Unknown);
         }
     }
 
@@ -87,6 +96,31 @@ public class GoogleResponse {
         return errorCodes;
     }
 
+    @JsonProperty("action")
+    public String getAction() {
+        return action;
+    }
+
+    @JsonProperty("action")
+    public void setAction(String action) {
+        this.action = action;
+    }
+
+    @JsonProperty("cdata")
+    public String getCdata() {
+        return cdata;
+    }
+
+    @JsonProperty("cdata")
+    public void setCdata(String cdata) {
+        this.cdata = cdata;
+    }
+
+    /**
+     * True when the failure was caused by the submitted token (bad, missing,
+     * expired or replayed) rather than by configuration or Cloudflare itself,
+     * so the attempt should count against the client.
+     */
     @JsonIgnore
     public boolean hasClientError() {
         final ErrorCode[] errors = getErrorCodes();
@@ -97,6 +131,7 @@ public class GoogleResponse {
             switch (error) {
                 case InvalidResponse:
                 case MissingResponse:
+                case TimeoutOrDuplicate:
                     return true;
                 default:
                     break;
@@ -107,7 +142,7 @@ public class GoogleResponse {
 
     @Override
     public String toString() {
-        return "GoogleResponse{" + "success=" + success + ", challengeTs='" + challengeTs + '\'' + ", hostname='" + hostname + '\'' + ", errorCodes=" + Arrays.toString(errorCodes) + '}';
+        return "TurnstileResponse{" + "success=" + success + ", challengeTs='" + challengeTs + '\'' + ", hostname='" + hostname + '\'' + ", errorCodes=" + Arrays.toString(errorCodes) + '}';
     }
 
 }

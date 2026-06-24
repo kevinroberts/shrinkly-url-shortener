@@ -1,17 +1,15 @@
 package com.vinberts.shrinkly.web.controllers;
 
 import com.blueconic.browscap.Capabilities;
-import com.google.common.collect.Maps;
 import com.vinberts.shrinkly.email.ShrinklyMailClient;
 import com.vinberts.shrinkly.email.mailPojos.MailLink;
 import com.vinberts.shrinkly.persistence.model.User;
 import com.vinberts.shrinkly.persistence.model.VerificationToken;
-import com.vinberts.shrinkly.registration.OnRegistrationCompleteEvent;
+import com.vinberts.shrinkly.security.AutoLoginService;
 import com.vinberts.shrinkly.security.ISecurityUserService;
 import com.vinberts.shrinkly.security.captcha.ICaptchaService;
 import com.vinberts.shrinkly.service.IUserService;
 import com.vinberts.shrinkly.service.UserAgentParserService;
-import com.vinberts.shrinkly.service.impl.UserDetailsServiceImpl;
 import com.vinberts.shrinkly.web.dto.PasswordDto;
 import com.vinberts.shrinkly.web.dto.UserDto;
 import com.vinberts.shrinkly.web.errors.InvalidOldPasswordException;
@@ -26,10 +24,10 @@ import org.springframework.context.MessageSource;
 import org.springframework.core.env.Environment;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,9 +37,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
@@ -77,16 +75,20 @@ public class RegistrationController {
     private ShrinklyMailClient mailClient;
 
     @Autowired
-    private UserDetailsServiceImpl userDetailsService;
-
-    @Autowired
     private ICaptchaService captchaService;
 
     @Autowired
     private UserAgentParserService userAgentParserService;
 
+    @Autowired
+    private AutoLoginService autoLoginService;
+
     @Value("${shrinkly.base.url}")
     private String serverUrl;
+
+    // Spring Security 6+ requires programmatic SecurityContext changes to be saved
+    // explicitly; mutating SecurityContextHolder alone no longer reaches the session.
+    private final SecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
 
     // Registration
 
@@ -129,6 +131,7 @@ public class RegistrationController {
     @GetMapping("/forgetPassword")
     public ModelAndView resetUserPasswordPage(Map<String, Object> model) {
         model.put("pageTitle", "Shrinkly - Forgotten Password");
+        model.put("turnstileSiteKey", captchaService.getCaptchaSite());
 
         ModelAndView mv = new ModelAndView("forgetPassword");
         mv.addAllObjects(model);
@@ -150,18 +153,20 @@ public class RegistrationController {
     @ResponseBody
     public GenericResponse registerUserAccount(@Valid final UserDto accountDto, final HttpServletRequest request) {
         log.debug("Registering user account with information: {}", accountDto);
+        GenericResponse genericResponse = new GenericResponse("Please pass a valid id as a parameter.","","id");
+        return new GenericResponse("Sorry, registrations are currently closed.");
 
-        final String response = request.getParameter("g-recaptcha-response");
-
-        captchaService.processResponse(response);
-
-        final User registered = userService.registerNewUserAccount(accountDto);
-        eventPublisher.publishEvent(new OnRegistrationCompleteEvent(registered, request.getLocale(), getAppUrl(request)));
-        return new GenericResponse("success");
+//        final String response = request.getParameter("cf-turnstile-response");
+//
+//        captchaService.processResponse(response);
+//
+//        final User registered = userService.registerNewUserAccount(accountDto);
+//        eventPublisher.publishEvent(new OnRegistrationCompleteEvent(registered, request.getLocale(), getAppUrl(request)));
+//        return new GenericResponse("success");
     }
 
     @RequestMapping(value = "/registrationConfirm", method = RequestMethod.GET)
-    public ModelAndView confirmRegistration(final HttpServletRequest request, final Model model, @RequestParam("token") final String token) throws UnsupportedEncodingException {
+    public ModelAndView confirmRegistration(final HttpServletRequest request, final HttpServletResponse response, final Model model, @RequestParam("token") final String token) throws UnsupportedEncodingException {
         Locale locale = request.getLocale();
         final String result = userService.validateVerificationToken(token);
         if (result.equals("valid")) {
@@ -170,7 +175,7 @@ public class RegistrationController {
             // model.addAttribute("qr", userService.generateQRUrl(user));
             // return "redirect:/qrcode.html?lang=" + locale.getLanguage();
             // }
-            authWithoutPassword(user);
+            autoLoginService.loginWithoutPassword(user, request, response);
             // remove the verification token now that it has been used successfully
             userService.expireVerificationToken(token);
             request.getSession().setAttribute("message", messageSource.getMessage("message.accountVerified", null, locale));
@@ -203,13 +208,14 @@ public class RegistrationController {
         SimpleMailMessage newTokenEmail = constructResendVerificationTokenEmail(getAppUrl(request), request.getLocale(), newToken, user);
 
         // construct email context
-        HashMap<String, Object> emailContext = Maps.newHashMap();
+        HashMap<String, Object> emailContext = new HashMap<>();
 
         emailContext.put("userGreeting", "Hi " + user.getUsername() + ", ");
         emailContext.put("mailBody1", "To complete your sign up, please verify your email:");
         emailContext.put("plainText", "Activate your Shrinkly.net account: " + newTokenEmail.getText());
-        emailContext.put("mailBody3", "Or copy this link in your web browser<br><a href=\"" +
-                newTokenEmail.getText() + "\">" + newTokenEmail.getText() + "</a><br>Thanks,<br>The Shrinkly Team" );
+        emailContext.put("mailBody3", """
+                Or copy this link in your web browser<br><a href="%s">%s</a><br>Thanks,<br>The Shrinkly Team"""
+                .formatted(newTokenEmail.getText(), newTokenEmail.getText()));
         emailContext.put("ctaLink", new MailLink(newTokenEmail.getText(), "Verify Email"));
 
         mailClient.prepareAndSend(newTokenEmail.getTo()[0], newTokenEmail.getSubject(), emailContext);
@@ -220,7 +226,11 @@ public class RegistrationController {
     // Reset password
     @RequestMapping(value = "/user/resetPassword", method = RequestMethod.POST)
     @ResponseBody
-    public GenericResponse resetPassword(final HttpServletRequest request, @RequestParam("email") final String userEmail) {
+    public GenericResponse resetPassword(final HttpServletRequest request, @RequestParam("email") final String userEmail,
+                                         @RequestParam(value = "cf-turnstile-response", required = false) final String captchaResponse) {
+        // Verify the Turnstile token before any work; this happens before the email
+        // lookup so it does not leak whether the address is registered.
+        captchaService.processResponse(captchaResponse);
         final User user = userService.findUserByEmail(userEmail);
         if (user != null) {
             final String token = new BigInteger(200, new SecureRandom()).toString(36);
@@ -229,7 +239,7 @@ public class RegistrationController {
             String userAgentStr = request.getHeader("User-Agent");
 
             // construct resetEmail
-            HashMap<String, Object> emailContext = Maps.newHashMap();
+            HashMap<String, Object> emailContext = new HashMap<>();
             emailContext.put("ctaLink", new MailLink(resetEmail.getText(), "Reset your Password"));
             emailContext.put("plainText", "Reset your Shrinkly.net password: " + resetEmail.getText());
             emailContext.put("userGreeting", "Hi " + user.getUsername() + ", ");
@@ -242,9 +252,12 @@ public class RegistrationController {
             final String platform = StringEscapeUtils.escapeEcmaScript(capabilities.getPlatform());
             final String platformVersion = capabilities.getPlatformVersion();
 
-            emailContext.put("mailBody3", " For security, this request was received from a " + platform + " version " + platformVersion +  " device using " + browser + ". If you did not request a password reset, please ignore this email or <a href=\"mailto:help@shrinkly.net\">contact support</a> if you have questions.<br>\n" +
-                        "                      <p>Thanks,\n" +
-                        "                        <br>The Shrinkly.net Team</p>");
+            emailContext.put("mailBody3", """
+                    For security, this request was received from a %s version %s device using %s. \
+                    If you did not request a password reset, please ignore this email or \
+                    <a href="mailto:help@shrinkly.net">contact support</a> if you have questions.<br>
+                    <p>Thanks,
+                    <br>The Shrinkly.net Team</p>""".formatted(platform, platformVersion, browser));
 
 
 
@@ -266,7 +279,7 @@ public class RegistrationController {
 
             SimpleMailMessage removalEmail = constructEmail("Your account has been removed", "", user);
 
-            HashMap<String, Object> emailContext = Maps.newHashMap();
+            HashMap<String, Object> emailContext = new HashMap<>();
             emailContext.put("plainText", "This is just a confirmation email that your Shrinkly.net account for the username " + user.getUsername() + " has been deleted.");
             emailContext.put("userGreeting", "Hi " + user.getUsername() + ", ");
             emailContext.put("mailBody1", "You recently requested to remove your Shrinkly.net account. This email is just to confirm that your account has been successfully deleted.");
@@ -298,8 +311,9 @@ public class RegistrationController {
 
     // change user password process from email reset
     @RequestMapping(value = "/user/changePassword", method = RequestMethod.GET)
-    public ModelAndView showChangePasswordPage(final Locale locale, final Model model, @RequestParam("id") final long id, @RequestParam("token") final String token) {
-        final Optional<String> result = securityUserService.validatePasswordResetToken(id, token);
+    public ModelAndView showChangePasswordPage(final Locale locale, final Model model, @RequestParam("id") final long id, @RequestParam("token") final String token,
+                                               final HttpServletRequest request, final HttpServletResponse response) {
+        final Optional<String> result = securityUserService.validatePasswordResetToken(id, token, request, response);
         if (result.isPresent()) {
             model.addAttribute("message", messageSource.getMessage("auth.message." + result.get(), null, locale));
 
@@ -318,11 +332,15 @@ public class RegistrationController {
 
     @RequestMapping(value = "/user/savePassword", method = RequestMethod.POST)
     @ResponseBody
-    public GenericResponse savePassword(final Locale locale, @Valid PasswordDto passwordDto) {
+    public GenericResponse savePassword(final Locale locale, @Valid PasswordDto passwordDto,
+                                        final HttpServletRequest request, final HttpServletResponse response) {
         final User userModel = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         userService.changeUserPassword(userModel, passwordDto.getNewPassword());
-        // unauth the user
-        SecurityContextHolder.getContext().setAuthentication(null);
+        // unauth the user: clear the context and persist the empty context so the
+        // temporary CHANGE_PASSWORD_PRIVILEGE session is actually removed (Spring
+        // Security 6+ no longer auto-saves the cleared context to the session)
+        SecurityContextHolder.clearContext();
+        securityContextRepository.saveContext(SecurityContextHolder.createEmptyContext(), request, response);
         return new GenericResponse(messageSource.getMessage("message.resetPasswordSuc", null, locale));
     }
 
@@ -348,13 +366,6 @@ public class RegistrationController {
         email.setTo(user.getEmail());
         email.setFrom(env.getProperty("support.email"));
         return email;
-    }
-
-    private void authWithoutPassword(User user) {
-        UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
-        Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
 }

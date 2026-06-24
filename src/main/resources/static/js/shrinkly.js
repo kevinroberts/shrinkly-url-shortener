@@ -194,6 +194,10 @@ var formEvents = {
           $('#customExpiryError').html(errorMessage).show();
         }
 
+        if (field === '') {
+          alert(errorMessage);
+        }
+
       }
     });
 
@@ -202,6 +206,16 @@ var formEvents = {
 };
 
 $(document).ready(function () {
+
+  // Attach the CSRF token (rendered into <meta> tags by fragments/header) to every
+  // jQuery AJAX request so state-changing POSTs pass Spring Security's CSRF check.
+  var csrfToken = $("meta[name='_csrf']").attr("content");
+  var csrfHeader = $("meta[name='_csrf_header']").attr("content");
+  if (csrfToken && csrfHeader) {
+    $(document).ajaxSend(function (e, xhr) {
+      xhr.setRequestHeader(csrfHeader, csrfToken);
+    });
+  }
 
   // home message modal popup logic
   if ($('#homeMessageModal').length) {

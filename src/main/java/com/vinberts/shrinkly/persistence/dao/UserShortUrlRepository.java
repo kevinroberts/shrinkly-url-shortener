@@ -22,6 +22,10 @@ public interface UserShortUrlRepository extends JpaRepository<UserShortUrl, Long
 
     Page<UserShortUrl> queryAllByUserOrderByDateAddedAsc(User user, Pageable pageable);
 
+    Page<UserShortUrl> queryAllByUserOrderByClicksAsc(User user, Pageable pageable);
+
+    Page<UserShortUrl> queryAllByUserOrderByClicksDesc(User user, Pageable pageable);
+
     Long countByUser(User user);
 
     Collection<UserShortUrl> findAllByUserAndCustomIsTrue(User user);
@@ -35,5 +39,15 @@ public interface UserShortUrlRepository extends JpaRepository<UserShortUrl, Long
     @Modifying
     @Query("delete from UserShortUrl t where t.expiryDate <= ?1")
     void deleteAllExpiredSince(LocalDateTime now);
+
+    void deleteByShortUrl(String shortUrl);
+
+    @Modifying
+    @Query("UPDATE UserShortUrl t SET t.clicks = ?2 where t.id = ?1")
+    void setClicksById(Long id, Long clicks);
+
+    @Modifying
+    @Query("UPDATE UserShortUrl t SET t.clicks = ?2 where t.shortUrl = ?1")
+    void setClicksByShortUrl(String shortUrl, Long clicks);
 
 }

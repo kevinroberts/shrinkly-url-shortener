@@ -71,11 +71,24 @@
                         <a title="Sort by date added descending" href="/">Created <i class="fas fa-sort-amount-up"></i></a>
                     </span>
                     <span th:if="${dateSortDir == 'DESC'}" th:remove="tag">
-                        <a title="Sort by date ascending" href="/?sort=dateAdded&dateAdded.dir=asc">Created <i class="fas fa-sort-amount-down"></i></a>
+                        <a title="Sort by date ascending" href="/?sort=dateAdded,asc">Created <i class="fas fa-sort-amount-down"></i></a>
+                    </span>
+                    <span th:if="${dateSortDir == 'none'}" th:remove="tag">
+                        <a title="Sort by date descending" href="/?sort=dateAdded,asc">Created</i></a>
                     </span>
                 </th>
                 <th scope="col">Short URL</th>
-                <th scope="col">All clicks</th>
+                <th scope="col">
+                    <span th:if="${clicksSortDir == 'ASC'}" th:remove="tag">
+                        <a title="Sort by clicks descending" href="/?sort=clicks,desc">All clicks <i class="fas fa-sort-amount-up"></i></a>
+                    </span>
+                    <span th:if="${clicksSortDir == 'DESC'}" th:remove="tag">
+                        <a title="Sort by clicks ascending" href="/?sort=clicks,asc">All clicks <i class="fas fa-sort-amount-down"></i></a>
+                    </span>
+                    <span th:if="${clicksSortDir == 'none'}" th:remove="tag">
+                        <a title="Sort by clicks descending" href="/?sort=clicks,desc">All clicks</i></a>
+                    </span>
+                </th>
                 <th scope="col"></th>
             </tr>
             </thead>

@@ -1,17 +1,17 @@
 <!DOCTYPE HTML>
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
 <head>
-    <noscript th:replace="fragments/header :: head" />
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <noscript th:replace="~{fragments/header :: head}" />
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
 
-<div th:replace="fragments/header :: sidenav"/>
+<div th:replace="~{fragments/header :: sidenav}"/>
 
 <!-- Main content -->
 <div class="main-content">
 
-    <div th:replace="fragments/header :: topnav(version='navbar-light',enableMobileMenu=false)"/>
+    <div th:replace="~{fragments/header :: topnav(version='navbar-light',enableMobileMenu=false)}"/>
 
     <!-- Page content -->
     <div class="container-fluid">
@@ -39,7 +39,7 @@
                                         </div>
                                     </div>
                                     <div class="form-group">
-                                            <div class="g-recaptcha" th:attr="data-sitekey=${@captchaSettings.getSite()}" data-callback="onReCaptchaSuccess" data-expired-callback="onReCaptchaExpired"></div>
+                                            <div class="cf-turnstile" th:attr="data-sitekey=${turnstileSiteKey}" data-callback="onCaptchaSuccess" data-expired-callback="onCaptchaExpired"></div>
                                             <div id="captchaError" class="invalid-feedback mt-1"></div>
                                     </div>
 
@@ -51,7 +51,7 @@
                 </div>
             </div>
         </div>
-        <div th:replace="fragments/footerLightBg :: footerLight"/>
+        <div th:replace="~{fragments/footerLightBg :: footerLight}"/>
     </div>
     <script th:inline="javascript">
       $(document).ready(function () {
@@ -75,8 +75,8 @@
 
         var shortCodeVal = $("#shortCode").val();
 
-        if (typeof grecaptcha !== 'undefined') {
-          var resp = grecaptcha.getResponse();
+        if (typeof turnstile !== 'undefined') {
+          var resp = turnstile.getResponse();
           if (resp.length == 0) {
             $("#captchaError").show().html("Please verify that you are not a robot.");
             return;
@@ -92,7 +92,7 @@
         $.ajax({
           type: "POST",
           url: "/reportAbuse",
-          data: JSON.stringify({ shortCode: shortCodeVal, 'g-recaptcha-response': grecaptcha.getResponse() }),
+          data: JSON.stringify({ shortCode: shortCodeVal, 'cf-turnstile-response': turnstile.getResponse() }),
           contentType: "application/json; charset=utf-8",
           dataType: "json",
           success: function(data) {
@@ -100,16 +100,16 @@
               $('#reportSuccess').show();
               $('#reportMessage').html(data.message);
               $("#shortCode").val('');
-              grecaptcha.reset();
+              turnstile.reset();
             }
           },
           error: function(jqXHR, textStatus, errorThrown) {
-            grecaptcha.reset();
+            turnstile.reset();
 
             var errorMessage = jqXHR.responseJSON.message;
             var field = jqXHR.responseJSON.field;
 
-            if (jqXHR.responseJSON.error == "InvalidReCaptcha") {
+            if (jqXHR.responseJSON.error == "InvalidCaptcha") {
               $("#captchaError").show().html(jqXHR.responseJSON.message);
             }
             if (jqXHR.responseJSON.error == "InternalError") {
@@ -128,13 +128,13 @@
 
       }
 
-      var onReCaptchaSuccess = function(response) {
+      var onCaptchaSuccess = function(response) {
         $("#captchaError").html("").hide();
       };
 
-      var onReCaptchaExpired = function(response) {
-        $("#captchaError").html("reCaptcha has expired. Please solve a new reCaptcha").show();
-        grecaptcha.reset();
+      var onCaptchaExpired = function(response) {
+        $("#captchaError").html("The captcha challenge has expired. Please complete a new one").show();
+        turnstile.reset();
       };
 
     </script>

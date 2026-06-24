@@ -28,7 +28,7 @@ public class ExpiredShortUrlsPurgeTask {
     public void purgeExpired() {
 
         LocalDateTime now = LocalDateTime.now();
-        log.debug("Running ExpiredShortUrlsPurgeTask for expired short urls older than " + now.toString());
+        log.debug("Running ExpiredShortUrlsPurgeTask for expired short urls older than {}", now);
 
         userShortUrlRepository.deleteAllExpiredSince(now);
         shortUrlAnalyticsRepository.deleteAllExpiredSince(now);

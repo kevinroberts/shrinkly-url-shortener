@@ -5,11 +5,14 @@ import com.vinberts.shrinkly.persistence.model.UserShortUrl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+
 /**
  *
  */
 public interface IShortUrlService {
 
+    List<UserShortUrl> getAllShortUrls();
 
     Page<UserShortUrl> findPaginated(User user, Pageable pageable);
 
@@ -17,8 +20,12 @@ public interface IShortUrlService {
 
     void saveNewShortUrl(UserShortUrl userShortUrl);
 
+    void deleteByShortUrl(String shortUrl);
+
     UserShortUrl findByUserAndFullUrl(User user, String fullUrl);
 
     UserShortUrl findByUserAndShortUrl(User user, String shortUrl);
+
+    void updateClicksForShortUrl(String shortUrl, Long clicks);
 
 }

@@ -2,7 +2,6 @@ package com.vinberts.shrinkly.repo;
 
 import com.vinberts.shrinkly.persistence.model.redis.ShortUrl;
 
-import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -21,16 +20,10 @@ public interface ShortUrlRepository {
 
     Long getClicksForShortUrl(String shortCode);
 
-    ShortUrl encodeLongUrl(String url, Integer size);
-
-    ShortUrl encodeLongUrlWithExpiration(String url, Integer size, LocalDateTime expiryTime);
-
     ShortUrl encodeLongUrl(String url);
 
-    BigInteger getTotalStoredUrls();
+    ShortUrl encodeLongUrlWithExpiration(String url, LocalDateTime expiryTime);
 
     void removeShortCode(String shortCode);
-
-    void incrementCount();
 
 }

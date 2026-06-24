@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -50,20 +49,20 @@ public class ApplicationDbInitializer implements ApplicationRunner {
         final Privilege passwordPrivilege = createPrivilegeIfNotFound("CHANGE_PASSWORD_PRIVILEGE");
 
         // == create initial roles
-        final List<Privilege> adminPrivileges = new ArrayList<>(Arrays.asList(readPrivilege, writePrivilege, passwordPrivilege));
-        final List<Privilege> userPrivileges = new ArrayList<>(Arrays.asList(readPrivilege, passwordPrivilege));
+        final List<Privilege> adminPrivileges = new ArrayList<>(List.of(readPrivilege, writePrivilege, passwordPrivilege));
+        final List<Privilege> userPrivileges = new ArrayList<>(List.of(readPrivilege, passwordPrivilege));
 
         final Role adminRole = createRoleIfNotFound("ROLE_ADMIN", adminPrivileges);
         final Role userRole = createRoleIfNotFound("ROLE_USER", userPrivileges);
 
         // create default admin account
         createUserIfNotFound("admin", "kevin@kevinroberts.us", "admin",
-                "https://lh3.googleusercontent.com/-iXqNEhNecVI/AAAAAAAAAAI/AAAAAAAAGrs/HdOTh2F04js/s120-p-rw-no-il/photo.jpg",
-                new ArrayList<Role>(Arrays.asList(adminRole, userRole)));
+                "https://pbs.twimg.com/profile_images/3252866486/294c280d6741255aad5ffbc03f8eb0d0_400x400.jpeg",
+                new ArrayList<Role>(List.of(adminRole, userRole)));
         // create a default user account
         createUserIfNotFound("kevin", "kevin.roberts10@gmail.com", "password",
-                "https://lh3.googleusercontent.com/-iXqNEhNecVI/AAAAAAAAAAI/AAAAAAAAGrs/HdOTh2F04js/s120-p-rw-no-il/photo.jpg",
-                new ArrayList<Role>(Arrays.asList(userRole)));
+                "https://pbs.twimg.com/profile_images/3252866486/294c280d6741255aad5ffbc03f8eb0d0_400x400.jpeg",
+                new ArrayList<Role>(List.of(userRole)));
     }
 
     private User createUserIfNotFound(final String username, final String email, final String password, final String profileImage, final Collection<Role> roles) {

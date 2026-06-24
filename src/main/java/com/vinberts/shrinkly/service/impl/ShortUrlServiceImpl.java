@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  *
@@ -29,6 +30,10 @@ public class ShortUrlServiceImpl implements IShortUrlService {
                 return userShortUrlRepository.queryAllByUserOrderByDateAddedDesc(user, pageable);
             } else if (pageable.getSort().toString().equals("dateAdded: ASC")) {
                 return userShortUrlRepository.queryAllByUserOrderByDateAddedAsc(user, pageable);
+            } else if (pageable.getSort().toString().equals("clicks: DESC")) {
+                return userShortUrlRepository.queryAllByUserOrderByClicksDesc(user, pageable);
+            } else if (pageable.getSort().toString().equals("clicks: ASC")) {
+                return userShortUrlRepository.queryAllByUserOrderByClicksAsc(user, pageable);
             }
         }
         return userShortUrlRepository.queryAllByUser(user, pageable);
@@ -56,4 +61,18 @@ public class ShortUrlServiceImpl implements IShortUrlService {
         return userShortUrlRepository.findFirstByUserAndShortUrl(user, shortUrl);
     }
 
+    @Override
+    public void updateClicksForShortUrl(final String shortUrl, final Long clicks) {
+        userShortUrlRepository.setClicksByShortUrl(shortUrl, clicks);
+    }
+
+    @Override
+    public void deleteByShortUrl(final String shortUrl) {
+        userShortUrlRepository.deleteByShortUrl(shortUrl);
+    }
+
+    @Override
+    public List<UserShortUrl> getAllShortUrls() {
+        return userShortUrlRepository.findAll();
+    }
 }

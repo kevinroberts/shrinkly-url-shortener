@@ -1,14 +1,14 @@
 <!DOCTYPE HTML>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <noscript th:replace="fragments/header :: head" />
+    <noscript th:replace="~{fragments/header :: head}" />
 </head>
 <body class="bg-default">
 
 
 <!-- Main content -->
 <div class="main-content">
-    <div th:replace="fragments/header :: topnav(version='navbar-dark',enableMobileMenu=true)"/>
+    <div th:replace="~{fragments/header :: topnav(version='navbar-dark',enableMobileMenu=true)}"/>
 
     <div class="header bg-gradient-primary py-7 py-lg-8">
         <div class="separator separator-bottom separator-skew zindex-100">
@@ -34,7 +34,7 @@
 </div>
 
 
-<div th:replace="fragments/footerDarkBg :: footerDark"/>
+<div th:replace="~{fragments/footerDarkBg :: footerDark}"/>
 
 
 </body>

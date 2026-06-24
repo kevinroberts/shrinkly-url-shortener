@@ -1,15 +1,15 @@
 <!DOCTYPE HTML>
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
 <head>
-    <noscript th:replace="fragments/header :: head" />
+    <noscript th:replace="~{fragments/header :: head}" />
 </head>
 <body>
 
-<div th:replace="fragments/header :: sidenav"/>
+<div th:replace="~{fragments/header :: sidenav}"/>
 
 <!-- Main content -->
 <div class="main-content">
-    <div th:replace="fragments/header :: topnav(version='navbar-light',enableMobileMenu=false)"/>
+    <div th:replace="~{fragments/header :: topnav(version='navbar-light',enableMobileMenu=false)}"/>
 
     <!-- Page content -->
     <div class="container-fluid">
@@ -71,7 +71,7 @@
                 </div>
             </div>
         </div>
-        <div th:replace="fragments/footerLightBg :: footerLight"/>
+        <div th:replace="~{fragments/footerLightBg :: footerLight}"/>
     </div>
 
 </div>

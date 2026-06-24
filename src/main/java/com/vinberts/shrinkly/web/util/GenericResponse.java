@@ -36,9 +36,9 @@ public class GenericResponse {
     public GenericResponse(List<ObjectError> allErrors, String error) {
         this.error = error;
         String temp = allErrors.stream().map(e -> {
-            if (e instanceof FieldError) {
+            if (e instanceof FieldError fieldError) {
                 String message = StringEscapeUtils.escapeJson(e.getDefaultMessage());
-                return "{\"field\":\"" + ((FieldError) e).getField() + "\",\"defaultMessage\":\"" + message + "\"}";
+                return "{\"field\":\"" + fieldError.getField() + "\",\"defaultMessage\":\"" + message + "\"}";
             } else {
                 String message = StringEscapeUtils.escapeJson(e.getDefaultMessage());
                 return "{\"object\":\"" + e.getObjectName() + "\",\"defaultMessage\":\"" + message + "\"}";

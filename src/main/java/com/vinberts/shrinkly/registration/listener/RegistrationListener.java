@@ -1,6 +1,5 @@
 package com.vinberts.shrinkly.registration.listener;
 
-import com.google.common.collect.Maps;
 import com.vinberts.shrinkly.email.ShrinklyMailClient;
 import com.vinberts.shrinkly.email.mailPojos.MailLink;
 import com.vinberts.shrinkly.persistence.model.User;
@@ -48,7 +47,7 @@ public class RegistrationListener implements ApplicationListener<OnRegistrationC
         final SimpleMailMessage email = constructEmailMessage(event, user, token);
 
         // construct email context
-        HashMap<String, Object> emailContext = Maps.newHashMap();
+        HashMap<String, Object> emailContext = new HashMap<>();
 
         emailContext.put("userGreeting", "Hi " + user.getUsername() + ", ");
         emailContext.put("mailBody1", "To complete your sign up, please verify your email:");

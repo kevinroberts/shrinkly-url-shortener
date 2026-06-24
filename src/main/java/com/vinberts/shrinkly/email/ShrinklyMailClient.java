@@ -46,7 +46,7 @@ public class ShrinklyMailClient {
             mailSender.send(messagePreparator);
         } catch (MailException e) {
             // runtime exception; compiler will not force you to handle it
-            log.error("Mail exception occurred trying to send message for subject " + subject + " to " + recipient, e);
+            log.error("Mail exception occurred trying to send message for subject {} to {}", subject, recipient, e);
         }
     }
 }

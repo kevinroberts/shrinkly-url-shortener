@@ -2,10 +2,8 @@ package com.vinberts.shrinkly.security;
 
 import com.google.common.hash.Hashing;
 import com.google.common.primitives.Ints;
-import com.vinberts.shrinkly.config.SpringRedisConfig;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -20,13 +18,10 @@ public class LoginAttemptService {
     private final int MAX_ATTEMPT = 10;
     private static final String REDIS_KEY_PREFIX = "shrinkly.login:";
 
-    private ConfigurableApplicationContext ctx = new AnnotationConfigApplicationContext(SpringRedisConfig.class);
+    private final RedisTemplate<String, String> redisTemplate;
 
-    @SuppressWarnings("unchecked")
-    private RedisTemplate<String, String> redisTemplate = (RedisTemplate<String, String>) ctx.getBean("redisTemplate");
-
-    public LoginAttemptService() {
-        super();
+    public LoginAttemptService(final StringRedisTemplate redisTemplate) {
+        this.redisTemplate = redisTemplate;
     }
 
     public void loginSucceeded(final String key) {

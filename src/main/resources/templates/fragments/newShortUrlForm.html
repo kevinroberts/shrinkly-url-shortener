@@ -30,12 +30,15 @@
                                                    Invalid custom url alias.
                                                 </div>
                                                 <div class="w-100 mb-3" sec:authorize="isAuthenticated()"></div>
-                                                <div class="col">
+                                                <div class="col" sec:authorize="isAuthenticated()">
                                                     <label for="fullUrlInput" class="sr-only">Original URL</label>
                                                     <input name="url" type="text" class="form-control" id="fullUrlInput" placeholder="Paste a URL here" autofocus="autofocus" />
                                                 </div>
-                                                <div class="col-auto">
+                                                <div class="col-auto" sec:authorize="isAuthenticated()">
                                                     <button id="shrinkFormSubmitBtn" type="submit" class="btn btn-primary">Shrink it</button>
+                                                </div>
+                                                <div class="col-auto" sec:authorize="!isAuthenticated()">
+                                                    <a class="btn btn-secondary btn-sm ml-2" th:href="@{/registration}">registration required</a>
                                                 </div>
                                             </div>
 

@@ -1,15 +1,15 @@
 package com.vinberts.shrinkly.events.listener;
 
-import com.google.common.base.Preconditions;
-import com.google.common.net.HttpHeaders;
 import com.vinberts.shrinkly.events.event.PaginatedResultsRetrievedEvent;
 import com.vinberts.shrinkly.utils.LinkUtil;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.StringJoiner;
+import java.util.Objects;
+import org.springframework.http.HttpHeaders;
 
 /**
  *
@@ -27,7 +27,7 @@ public class PaginatedResultsRetrievedDiscoverabilityListener implements Applica
 
     @Override
     public final void onApplicationEvent(final PaginatedResultsRetrievedEvent ev) {
-        Preconditions.checkNotNull(ev);
+        Objects.requireNonNull(ev);
 
         addLinkHeaderOnPagedResourceRetrieval(ev.getUriBuilder(), ev.getResponse(), ev.getClazz(), ev.getPage(),
                 ev.getTotalPages(), ev.getPageSize());

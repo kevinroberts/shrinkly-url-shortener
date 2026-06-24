@@ -1,7 +1,5 @@
 package com.vinberts.shrinkly.validation;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
 import org.passay.CharacterRule;
 import org.passay.EnglishCharacterData;
 import org.passay.LengthRule;
@@ -10,10 +8,10 @@ import org.passay.PasswordValidator;
 import org.passay.RuleResult;
 import org.passay.WhitespaceRule;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
-import java.util.Arrays;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  *
@@ -28,7 +26,7 @@ public class PasswordConstraintValidator implements ConstraintValidator<ValidPas
     @Override
     public boolean isValid(final String password, final ConstraintValidatorContext context) {
         // @formatter:off
-        final PasswordValidator validator = new PasswordValidator(Arrays.asList(
+        final PasswordValidator validator = new PasswordValidator(List.of(
                 new LengthRule(8, 30),
                 // at least one upper-case character
                 new CharacterRule(EnglishCharacterData.UpperCase, 1),
@@ -44,7 +42,7 @@ public class PasswordConstraintValidator implements ConstraintValidator<ValidPas
         }
         context.disableDefaultConstraintViolation();
         List<String> errors = validator.getMessages(result);
-        List<String> translatedErrors = Lists.newArrayList();
+        List<String> translatedErrors = new ArrayList<>();
         for (String error: errors) {
             // http://www.passay.org/reference/ for errors
             if (error.startsWith("INSUFFICIENT_UPPERCASE")) {
@@ -70,7 +68,7 @@ public class PasswordConstraintValidator implements ConstraintValidator<ValidPas
             }
         }
 
-        context.buildConstraintViolationWithTemplate(Joiner.on("<br>").join(translatedErrors)).addConstraintViolation();
+        context.buildConstraintViolationWithTemplate(String.join("<br>", translatedErrors)).addConstraintViolation();
         return false;
     }
 

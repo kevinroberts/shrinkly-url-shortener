@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <noscript th:replace="~{fragments/header :: head}" />
+</head>
+<body class="bg-default">
+<div class="main-content">
+    <div th:replace="~{fragments/header :: topnav(version='navbar-dark',enableMobileMenu=true)}"/>
+
+    <div class="header bg-gradient-primary py-7 py-lg-8">
+        <div class="container">
+            <div class="header-body text-center mb-7">
+                <div class="row justify-content-center">
+                    <div class="col-lg-5 col-md-6">
+                        <h1 class="text-white">You're invited!</h1>
+                        <p class="text-lead text-light">Create your Shrinkly account below.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="separator separator-bottom separator-skew zindex-100">
+            <svg x="0" y="0" viewBox="0 0 2560 100" preserveAspectRatio="none" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                <polygon class="fill-default" points="2560 0 2560 100 0 100"></polygon>
+            </svg>
+        </div>
+    </div>
+
+    <div class="container mt--8 pb-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-5 col-md-7">
+                <div class="card bg-secondary shadow border-0">
+                    <div class="card-body px-lg-5 py-lg-5">
+                        <div th:if="${validationError}">
+                            <div class="alert alert-danger" th:text="${validationError}">error</div>
+                        </div>
+                        <form th:action="@{/invite/accept}" method="post" role="form">
+                            <input type="hidden" name="token" th:value="${token}"/>
+                            <div class="form-group mb-3">
+                                <label class="text-muted"><small>Email</small></label>
+                                <input class="form-control" type="email" th:value="${email}" readonly>
+                            </div>
+                            <div class="form-group mb-3">
+                                <div class="input-group input-group-alternative">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="ni ni-single-02"></i></span>
+                                    </div>
+                                    <input name="username" class="form-control" placeholder="Username" type="text" autofocus required>
+                                </div>
+                            </div>
+                            <div class="form-group mb-3">
+                                <div class="input-group input-group-alternative">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
+                                    </div>
+                                    <input name="password" class="form-control" placeholder="Password" type="password" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="input-group input-group-alternative">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
+                                    </div>
+                                    <input name="matchingPassword" class="form-control" placeholder="Confirm password" type="password" required>
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary my-4">Create account</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:replace="~{fragments/footerDarkBg :: footerDark}"/>
+</body>
+</html>

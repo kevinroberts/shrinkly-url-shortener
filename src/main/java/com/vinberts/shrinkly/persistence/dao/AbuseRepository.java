@@ -13,6 +13,12 @@ public interface AbuseRepository extends JpaRepository<Abuse, Long> {
 
     Page<Abuse> queryAllByDateAddedIsNotNullOrderByDateAddedDesc(Pageable pageable);
 
+    Page<Abuse> queryAllByAddressedFalse(Pageable pageable);
+
+    Abuse getAbuseById(Long id);
+
     void deleteAllByUser(User user);
+
+    void deleteAbuseById(Long id);
 
 }

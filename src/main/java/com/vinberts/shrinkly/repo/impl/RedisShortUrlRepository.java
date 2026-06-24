@@ -1,19 +1,15 @@
 package com.vinberts.shrinkly.repo.impl;
 
 import com.google.common.primitives.Longs;
-import com.vinberts.shrinkly.config.SpringRedisConfig;
 import com.vinberts.shrinkly.persistence.model.redis.ShortUrl;
 import com.vinberts.shrinkly.repo.ShortUrlRepository;
-import com.vinberts.shrinkly.service.ShrinklyUrlHashService;
-import com.vinberts.shrinkly.service.impl.ShrinklyUrlHashServiceImpl;
+import com.vinberts.shrinkly.service.ShortCodeGenerator;
+import com.vinberts.shrinkly.web.errors.ShortUrlPersistenceException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Repository;
 
-import javax.annotation.PostConstruct;
-import java.math.BigInteger;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -27,28 +23,17 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class RedisShortUrlRepository implements ShortUrlRepository {
 
-    private boolean alreadySetup = false;
     private static final String REDIS_KEY_PREFIX = "shrinkly.url:";
-    private static final String REDIS_KEY_PATTERN = REDIS_KEY_PREFIX + "*";
     private static final String REDIS_KEY_PREFIX_CLICKS = "shrinkly.clicks:";
     private static final String REDIS_KEY_PATTERN_CLICKS = REDIS_KEY_PREFIX_CLICKS + "*";
 
-    private ConfigurableApplicationContext ctx = new AnnotationConfigApplicationContext(SpringRedisConfig.class);
+    private final RedisTemplate<String, String> redisTemplate;
+    private final ShortCodeGenerator shortCodeGenerator;
 
-    @SuppressWarnings("unchecked")
-    private RedisTemplate<String, String> redisTemplate = (RedisTemplate<String, String>) ctx.getBean("redisTemplate");
-
-    private BigInteger count;
-
-    @PostConstruct
-    public void init() {
-        if (alreadySetup) {
-            log.info("url count init method called - current count " + count);
-        } else {
-            count = BigInteger.valueOf(redisTemplate.keys(REDIS_KEY_PATTERN).size());
-            alreadySetup = true;
-            log.info("Initialized total url count to " + count);
-        }
+    public RedisShortUrlRepository(final StringRedisTemplate redisTemplate,
+                                   final ShortCodeGenerator shortCodeGenerator) {
+        this.redisTemplate = redisTemplate;
+        this.shortCodeGenerator = shortCodeGenerator;
     }
 
     @Override
@@ -62,7 +47,7 @@ public class RedisShortUrlRepository implements ShortUrlRepository {
                 if (expiryTime != null) {
                     LocalDateTime now = LocalDateTime.now(Clock.systemUTC());
                     final long diffSec = Duration.between(now, expiryTime).getSeconds();
-                    log.debug("Setting custom short url " + customAlias + " to expire in " + diffSec + " seconds");
+                    log.debug("Setting custom short url {} to expire in {} seconds", customAlias, diffSec);
                     redisTemplate.opsForValue().set(keyToUse, url, diffSec, TimeUnit.SECONDS);
                     // set initial click count
                     redisTemplate.opsForValue().set(REDIS_KEY_PATTERN_CLICKS + customAlias, "0", diffSec, TimeUnit.SECONDS);
@@ -72,68 +57,45 @@ public class RedisShortUrlRepository implements ShortUrlRepository {
                     redisTemplate.opsForValue().set(REDIS_KEY_PATTERN_CLICKS + customAlias, "0");
                 }
             } catch (Exception e) {
+                // A failed write means the alias does not resolve. Throw rather than
+                // return null: null is reserved for the alias-already-taken case above,
+                // and swallowing it here would let the caller report a bogus success and
+                // persist a Postgres row for a link that 404s on redirect.
                 log.error("Error trying to set key for custom alias, ", e);
-                return null;
+                throw new ShortUrlPersistenceException("Failed to store custom alias: " + customAlias, e);
             }
             return new ShortUrl(url, customAlias);
         }
     }
 
     @Override
-    public ShortUrl encodeLongUrlWithExpiration(final String url, final Integer size, final LocalDateTime expiryTime) {
-        // check if url has already been added
-
-        if (redisTemplate.hasKey(url) && expiryTime == null) {
-            String id = redisTemplate.opsForValue().get(url);
-            return new ShortUrl(url, id);
-        }
-        if (size != null) {
-            // else create a new short url
-            ShrinklyUrlHashService shrinklyUrlHashService = new ShrinklyUrlHashServiceImpl();
-            String id = shrinklyUrlHashService.generateRandomHash(size);
-            String keyToUse = REDIS_KEY_PREFIX + id;
-            if (redisTemplate.hasKey(keyToUse)) {
-                int tries = 0;
-                do {
-                    tries++;
-                    id = shrinklyUrlHashService.generateRandomHash(size);
-                    keyToUse = REDIS_KEY_PREFIX + id;
-                    if (tries > 10 && tries < 20) {
-                        id = shrinklyUrlHashService.generateRandomHash(size) + "0";
-                        keyToUse = REDIS_KEY_PREFIX + id;
-                    } else if (tries > 20 && tries < 30) {
-                        id = shrinklyUrlHashService.generateRandomHash(size) + "o";
-                        keyToUse = REDIS_KEY_PREFIX + id;
-                    } else if (tries > 30) {
-                        log.warn("key reuse: " + keyToUse + " tries: " + tries);
-                        id = shrinklyUrlHashService.generateHash(url);
-                        keyToUse = REDIS_KEY_PREFIX + id;
-                    }
-                } while (redisTemplate.hasKey(keyToUse));
+    public ShortUrl encodeLongUrlWithExpiration(final String url, final LocalDateTime expiryTime) {
+        final String id = shortCodeGenerator.nextCode();
+        final String keyToUse = REDIS_KEY_PREFIX + id;
+        try {
+            if (expiryTime != null) {
+                final LocalDateTime now = LocalDateTime.now(Clock.systemUTC());
+                final long diffSec = Duration.between(now, expiryTime).getSeconds();
+                log.debug("Setting short url {} to expire in {} seconds", id, diffSec);
+                redisTemplate.opsForValue().set(keyToUse, url, diffSec, TimeUnit.SECONDS);
+                redisTemplate.opsForValue().set(REDIS_KEY_PATTERN_CLICKS + id, "0", diffSec, TimeUnit.SECONDS);
+            } else {
+                redisTemplate.opsForValue().set(keyToUse, url);
+                redisTemplate.opsForValue().set(REDIS_KEY_PATTERN_CLICKS + id, "0");
             }
-            try {
-                if (expiryTime != null) {
-                    LocalDateTime now = LocalDateTime.now(Clock.systemUTC());
-                    final long diffSec = Duration.between(now, expiryTime).getSeconds();
-                    log.debug("Setting short url " + id + " to expire in " + diffSec + " seconds");
-                    redisTemplate.opsForValue().set(keyToUse, url, diffSec, TimeUnit.SECONDS);
-
-                    // set initial click count
-                    redisTemplate.opsForValue().set(REDIS_KEY_PATTERN_CLICKS + id, "0", diffSec, TimeUnit.SECONDS);
-                } else {
-                    redisTemplate.opsForValue().set(keyToUse, url);
-                    redisTemplate.opsForValue().set(url, id);
-                    // set initial click count
-                    redisTemplate.opsForValue().set(REDIS_KEY_PATTERN_CLICKS + id, "0");
-                }
-            } catch (Exception e) {
-                log.error("Error trying to set key, ", e);
-            }
-
-            return new ShortUrl(url, id);
-        } else {
-            return this.encodeLongUrl(url);
+        } catch (Exception e) {
+            // The short code was never stored, so the link would 404 on redirect.
+            // Throw rather than returning a ShortUrl, which would let the caller report
+            // a bogus 201 and persist a Postgres row for an unresolvable link.
+            log.error("Error trying to set key, ", e);
+            throw new ShortUrlPersistenceException("Failed to store short code: " + id, e);
         }
+        return new ShortUrl(url, id);
+    }
+
+    @Override
+    public ShortUrl encodeLongUrl(final String url) {
+        return encodeLongUrlWithExpiration(url, null);
     }
 
     @Override
@@ -155,16 +117,20 @@ public class RedisShortUrlRepository implements ShortUrlRepository {
         if (url != null) {
             Long expireSeconds = redisTemplate.getExpire(keyToGet, TimeUnit.SECONDS);
             final String countKey = REDIS_KEY_PATTERN_CLICKS + shortCode;
-            final String oldCountStr = redisTemplate.opsForValue().get(countKey);
-            Long oldClick = Longs.tryParse(oldCountStr, 10);
-            Long newClick = oldClick + 1L;
+            // Atomic INCR: correct under concurrent hits to the same link, and it
+            // preserves the counter key's existing TTL. The previous get/+1/set lost
+            // increments under concurrency, dropped the TTL on expiring links, and
+            // NPE'd when the counter key was missing.
+            Long newClick = redisTemplate.opsForValue().increment(countKey);
+            if (newClick == null) {
+                newClick = 1L;
+            }
             ShortUrl shortUrl = new ShortUrl(url, shortCode, newClick);
             if (expireSeconds > 0) {
                 shortUrl.setExpirationInSeconds(expireSeconds);
             } else {
                 shortUrl.setExpirationInSeconds(-1L);
             }
-            redisTemplate.opsForValue().set(countKey, newClick.toString());
             return Optional.of(shortUrl);
         } else {
             return Optional.empty();
@@ -185,8 +151,8 @@ public class RedisShortUrlRepository implements ShortUrlRepository {
     @Override
     public Long getClicksForShortUrl(final String shortCode) {
         final String countKey = REDIS_KEY_PATTERN_CLICKS + shortCode;
-        final String countStr = redisTemplate.opsForValue().get(countKey);
-        Long clicks = Longs.tryParse(countStr, 10);
+        final Optional<String> countStr = Optional.ofNullable(redisTemplate.opsForValue().get(countKey));
+        Long clicks = Longs.tryParse(countStr.orElse("0"), 10);
         if (clicks != null) {
             return clicks;
         } else {
@@ -195,33 +161,21 @@ public class RedisShortUrlRepository implements ShortUrlRepository {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public ShortUrl encodeLongUrl(final String url, final Integer size) {
-        return this.encodeLongUrlWithExpiration(url, size, null);
-    }
-
-    @Override
     public void removeShortCode(final String shortCode) {
-        final String countKey = REDIS_KEY_PATTERN_CLICKS + shortCode;
         final String keyToRemove = REDIS_KEY_PREFIX + shortCode;
-        redisTemplate.delete(keyToRemove);
-        redisTemplate.delete(countKey);
-    }
-
-    @Override
-    public ShortUrl encodeLongUrl(final String url) {
-        return this.encodeLongUrl(url, 6);
-    }
-
-    @Override
-    public BigInteger getTotalStoredUrls() {
-        this.incrementCount();
-        return count;
-    }
-
-    @Override
-    public void incrementCount() {
-        count = count.add(BigInteger.valueOf(1));
+        final String countKey = REDIS_KEY_PATTERN_CLICKS + shortCode;
+        // Fetch the long URL before deleting the forward key so we can also clean up
+        // any legacy url -> id reverse-mapping entry created by the old code. New
+        // entries have no such key, so this delete is a harmless best-effort no-op.
+        final String url = redisTemplate.opsForValue().get(keyToRemove);
+        final boolean urlRemoved = Boolean.TRUE.equals(redisTemplate.delete(keyToRemove));
+        final boolean countRemoved = Boolean.TRUE.equals(redisTemplate.delete(countKey));
+        if (url != null) {
+            redisTemplate.delete(url);
+        }
+        if (!urlRemoved || !countRemoved) {
+            log.error("could not remove redis keys for short code: {}", shortCode);
+        }
     }
 
 }

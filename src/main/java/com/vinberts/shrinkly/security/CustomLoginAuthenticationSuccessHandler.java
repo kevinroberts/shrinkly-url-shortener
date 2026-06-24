@@ -10,10 +10,10 @@ import org.springframework.security.web.RedirectStrategy;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.time.LocalDateTime;
 
@@ -48,8 +48,7 @@ public class CustomLoginAuthenticationSuccessHandler implements AuthenticationSu
 
         if (session != null) {
             session.setMaxInactiveInterval(30 * 60);
-            if (authentication.getPrincipal() instanceof User) {
-                User loggedUser = (User) authentication.getPrincipal();
+            if (authentication.getPrincipal() instanceof User loggedUser) {
                 loggedUser.setLastLogin(LocalDateTime.now());
                 userRepository.save(loggedUser);
             } else {

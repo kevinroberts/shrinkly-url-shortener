@@ -1,13 +1,12 @@
 package com.vinberts.shrinkly.utils;
 
-import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.apache.commons.validator.routines.RegexValidator;
 import org.apache.commons.validator.routines.UrlValidator;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -15,7 +14,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Set;
 
-import static com.vinberts.shrinkly.service.impl.ShrinklyUrlHashServiceImpl.INVALID_HASHES;
+import static com.vinberts.shrinkly.service.ShortCodeGenerator.INVALID_HASHES;
 
 
 /**
@@ -29,7 +28,7 @@ public final class LinkUtil {
     public static final String REL_FIRST = "first";
     public static final String REL_LAST = "last";
 
-    private static Set<String> urlShorteningServices = Sets.newHashSet("is.gd", "lc.chat",
+    private static final Set<String> urlShorteningServices = Set.of("is.gd", "lc.chat",
             "j.mp", "goo.gl", "owl.ly", "bit.ly", "t.co", "xn--kn8h.to", "clk.im", "snip.ly",
             "shrinkly.net", "soo.gd", "s2r.co", "clicky.me", "tinyurl.com", "budurl.com");
 
@@ -121,8 +120,8 @@ public final class LinkUtil {
         URL url;
 
         try {
-            url = new URL(urlstr);
-        } catch (MalformedURLException e) {
+            url = URI.create(urlstr).toURL();
+        } catch (MalformedURLException | IllegalArgumentException e) {
             log.error("Malformed url passed", urlstr);
             return false;
         }
@@ -143,13 +142,13 @@ public final class LinkUtil {
                     Location = url.getProtocol() + "://" + url.getHost() + Location;
                 }
                 con.disconnect();
-                log.info("Url is a redirect to location: " + Location);
+                log.info("Url is a redirect to location: {}", Location);
                 return true;
             } else {
                 con.disconnect();
             }
         } catch (Exception e) {
-            log.error("could not connect to user url " + url.toString(), e);
+            log.error("could not connect to user url {}", url, e);
         }
         return false;
     }

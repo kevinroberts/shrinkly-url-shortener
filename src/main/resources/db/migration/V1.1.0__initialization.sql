@@ -193,6 +193,7 @@ CREATE TABLE public.app_user_short_urls (
     full_url character varying(2000) NOT NULL,
     date_added timestamp without time zone DEFAULT now() NOT NULL,
     is_custom boolean DEFAULT false NOT NULL,
+    clicks bigint DEFAULT 0 NOT NULL,
     expiration_date timestamp without time zone
 );
 

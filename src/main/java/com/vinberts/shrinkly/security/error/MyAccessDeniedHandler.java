@@ -7,9 +7,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
@@ -28,9 +28,7 @@ public class MyAccessDeniedHandler implements AccessDeniedHandler {
                 = SecurityContextHolder.getContext().getAuthentication();
 
         if (auth != null) {
-            log.warn("User '" + auth.getName()
-                    + "' attempted to access the protected URL: "
-                    + httpServletRequest.getRequestURI());
+            log.warn("User '{}' attempted to access the protected URL: {}", auth.getName(), httpServletRequest.getRequestURI());
         }
 
         httpServletResponse.sendRedirect(httpServletRequest.getContextPath() + "/unauthorized");

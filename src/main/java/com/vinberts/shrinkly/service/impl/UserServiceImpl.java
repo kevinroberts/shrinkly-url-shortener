@@ -1,6 +1,5 @@
 package com.vinberts.shrinkly.service.impl;
 
-import com.google.common.collect.Lists;
 import com.timgroup.jgravatar.Gravatar;
 import com.timgroup.jgravatar.GravatarDefaultImage;
 import com.timgroup.jgravatar.GravatarRating;
@@ -32,10 +31,8 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.ArrayList;
 
 /**
  *
@@ -78,26 +75,40 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public User registerNewUserAccount(final UserDto accountDto) throws UserAlreadyExistException {
-        if (emailExists(accountDto.getEmail())) {
-            throw new UserAlreadyExistException("There is an account with that email address: " + accountDto.getEmail());
+        // Self-service registration historically created a disabled account that the
+        // email-verification token later enabled. Preserve enabled=false here.
+        return buildUser(accountDto.getEmail(), accountDto.getUsername(), accountDto.getPassword(), false);
+    }
+
+    @Override
+    public User createEnabledUser(final String email, final String username, final String rawPassword) {
+        // Invited users arrive via an emailed token, so the email is already verified
+        // and the account is enabled immediately.
+        return buildUser(email, username, rawPassword, true);
+    }
+
+    private User buildUser(final String email, final String username, final String rawPassword, final boolean enabled) {
+        if (emailExists(email)) {
+            throw new UserAlreadyExistException("There is an account with that email address: " + email);
         }
-        if (usernameExists(accountDto.getUsername())) {
-            throw new UserAlreadyExistException("There is an account with that username: " + accountDto.getUsername());
+        if (usernameExists(username)) {
+            throw new UserAlreadyExistException("There is an account with that username: " + username);
         }
         final User user = new User();
-        user.setUsername(accountDto.getUsername());
+        user.setUsername(username);
         user.setDateAdded(LocalDateTime.now());
-        user.setPassword(passwordEncoder.encode(accountDto.getPassword()));
-        user.setEmail(accountDto.getEmail());
+        user.setPassword(passwordEncoder.encode(rawPassword));
+        user.setEmail(email);
         user.setSecret(Base32.random());
         user.setCredentialsNonExpired(true);
         user.setAccountNonLocked(true);
         user.setAccountNonExpired(true);
+        user.setEnabled(enabled);
         Gravatar gravatar = new Gravatar(100, GravatarRating.GENERAL_AUDIENCES, GravatarDefaultImage.IDENTICON);
-        String profileUrl = gravatar.getUrl(accountDto.getEmail());
+        String profileUrl = gravatar.getUrl(email);
         profileUrl = StringUtils.replaceOnceIgnoreCase(profileUrl, "http", "https");
         user.setProfileImage(profileUrl);
-        user.setRoles(Arrays.asList(roleRepository.findByName("ROLE_USER")));
+        user.setRoles(Collections.singletonList(roleRepository.findByName("ROLE_USER")));
         return userRepository.save(user);
     }
 
@@ -255,7 +266,7 @@ public class UserServiceImpl implements IUserService {
     public List<User> getUsersFromSessionRegistry() {
         //sessionRegistry.getSessionIds()
         List<?> users = sessionRegistry.getAllPrincipals();
-        List<User> activeUsers = Lists.newArrayList();
+        List<User> activeUsers = new ArrayList<>();
 
         for (final Object principal : users) {
                 // get user sessions that are not expired

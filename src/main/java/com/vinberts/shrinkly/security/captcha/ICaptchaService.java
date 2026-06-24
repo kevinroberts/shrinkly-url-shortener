@@ -1,14 +1,14 @@
 package com.vinberts.shrinkly.security.captcha;
 
-import com.vinberts.shrinkly.web.errors.ReCaptchaInvalidException;
+import com.vinberts.shrinkly.web.errors.CaptchaInvalidException;
 
 /**
  *
  */
 public interface ICaptchaService {
-    void processResponse(final String response) throws ReCaptchaInvalidException;
+    void processResponse(final String response) throws CaptchaInvalidException;
 
-    String getReCaptchaSite();
+    String getCaptchaSite();
 
-    String getReCaptchaSecret();
+    String getCaptchaSecret();
 }

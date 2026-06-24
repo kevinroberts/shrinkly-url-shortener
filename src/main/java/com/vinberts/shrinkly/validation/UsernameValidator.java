@@ -2,8 +2,8 @@ package com.vinberts.shrinkly.validation;
 
 import org.apache.commons.validator.routines.RegexValidator;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 /**
  *

@@ -12,8 +12,6 @@ import org.springframework.validation.Validator;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.context.request.RequestContextListener;
 import org.springframework.web.servlet.LocaleResolver;
-import org.springframework.web.servlet.config.annotation.DefaultServletHandlerConfigurer;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
@@ -26,9 +24,13 @@ import java.util.Locale;
 /**
  *
  */
+/*
+ * Boot's WebMvcAutoConfiguration honors the WebMvcConfigurer callbacks below;
+ * @EnableWebMvc would suppress it and clash with the localeResolver bean,
+ * which WebMvcConfigurationSupport now registers itself.
+ */
 @Configuration
 @ComponentScan(basePackages = { "com.vinberts.shrinkly.web" })
-@EnableWebMvc
 public class MvcConfig implements WebMvcConfigurer {
 
     @Autowired
@@ -68,11 +70,6 @@ public class MvcConfig implements WebMvcConfigurer {
 //        simpleMappingExceptionResolver.setDefaultStatusCode(404);
 //        resolvers.add(simpleMappingExceptionResolver);
 //    }
-
-    @Override
-    public void configureDefaultServletHandling(final DefaultServletHandlerConfigurer configurer) {
-        configurer.enable();
-    }
 
     @Override
     public void addResourceHandlers(final ResourceHandlerRegistry registry) {

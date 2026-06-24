@@ -6,10 +6,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.MailAuthenticationException;
-import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
@@ -63,17 +64,17 @@ public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionH
     }
 
     @Override
-    protected ResponseEntity<Object> handleBindException(final BindException ex, final HttpHeaders headers, final HttpStatus status, final WebRequest request) {
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(final MethodArgumentNotValidException ex, final HttpHeaders headers, final HttpStatusCode status, final WebRequest request) {
         log.error("400 Status Code", ex);
         final BindingResult result = ex.getBindingResult();
         final GenericResponse bodyOfResponse = new GenericResponse(result.getAllErrors(), "Invalid" + result.getObjectName());
         return handleExceptionInternal(ex, bodyOfResponse, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
     }
 
-    @ExceptionHandler({ ReCaptchaInvalidException.class })
-    public ResponseEntity<Object> handleReCaptchaInvalid(final RuntimeException ex, final WebRequest request) {
+    @ExceptionHandler({ CaptchaInvalidException.class })
+    public ResponseEntity<Object> handleCaptchaInvalid(final RuntimeException ex, final WebRequest request) {
         logger.error("400 Status Code", ex);
-        final GenericResponse bodyOfResponse = new GenericResponse(messageSource.getMessage("message.invalidReCaptcha", null, request.getLocale()), "InvalidReCaptcha");
+        final GenericResponse bodyOfResponse = new GenericResponse(messageSource.getMessage("message.invalidCaptcha", null, request.getLocale()), "InvalidCaptcha");
         return handleExceptionInternal(ex, bodyOfResponse, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
     }
 
@@ -98,6 +99,14 @@ public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionH
         logger.error("500 Status Code", ex);
         final GenericResponse bodyOfResponse = new GenericResponse(messageSource.getMessage("message.email.config.error", null, request.getLocale()), "MailError");
         return new ResponseEntity<Object>(bodyOfResponse, new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    // 503
+    @ExceptionHandler({ ShortUrlPersistenceException.class })
+    public ResponseEntity<Object> handleShortUrlPersistence(final RuntimeException ex, final WebRequest request) {
+        log.error("503 Status Code", ex);
+        final GenericResponse bodyOfResponse = new GenericResponse(messageSource.getMessage("message.shortUrlPersistError", null, request.getLocale()), "ShortUrlPersistError");
+        return new ResponseEntity<>(bodyOfResponse, new HttpHeaders(), HttpStatus.SERVICE_UNAVAILABLE);
     }
 
     @ExceptionHandler({ Exception.class })

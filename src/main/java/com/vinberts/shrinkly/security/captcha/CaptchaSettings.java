@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
  *
  */
 @Component
-@ConfigurationProperties(prefix = "google.recaptcha.key")
+@ConfigurationProperties(prefix = "cloudflare.turnstile")
 public class CaptchaSettings {
 
     private String site;

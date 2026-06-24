@@ -15,7 +15,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -56,11 +56,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             User user = this.userRepository.findUserByUsername(username);
 
             if (user == null) {
-                log.warn("Username not found: " + username);
+                log.warn("Username not found: {}", username);
                 throw new UsernameNotFoundException("User " + username + " was not found in the database");
             }
 
-            log.debug("Found user: " + user);
+            log.debug("Found user: {}", user);
 
             user.setAuthorities((Collection<GrantedAuthority>) getAuthorities(user.getRoles()));
 

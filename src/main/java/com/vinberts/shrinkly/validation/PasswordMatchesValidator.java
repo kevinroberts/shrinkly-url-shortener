@@ -1,9 +1,7 @@
 package com.vinberts.shrinkly.validation;
 
-import com.vinberts.shrinkly.web.dto.UserDto;
-
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 /**
  *
@@ -17,8 +15,11 @@ public class PasswordMatchesValidator implements ConstraintValidator<PasswordMat
 
     @Override
     public boolean isValid(final Object obj, final ConstraintValidatorContext context) {
-        final UserDto user = (UserDto) obj;
-        return user.getPassword().equals(user.getMatchingPassword());
+        if (!(obj instanceof PasswordMatchable matchable)) {
+            return false;
+        }
+        final String password = matchable.getPassword();
+        return password != null && password.equals(matchable.getMatchingPassword());
     }
 
 }

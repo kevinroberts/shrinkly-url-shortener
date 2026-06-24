@@ -1,24 +1,28 @@
 workflows:
-  version: 2
   build-deploy:
     jobs:
+      - unit-test:
+          filters:
+            branches:
+              only: master
       - publish-docker:
           filters:
             branches:
               only: master
 
-version: 2
+version: 2.1
 jobs:
   unit-test:
     docker:
-      - image: circleci/openjdk:11-stretch-node-browsers-legacy
+      - image: cimg/openjdk:25.0
+      - image: cimg/redis:7.2
     working_directory: ~/repo
     steps:
       - checkout
       - restore_cache:
           keys:
-            - hello-spring-mvn-V2-{{ checksum "pom.xml" }}
-            - hello-spring-mvn-V2
+            - hello-spring-mvn-V3-{{ checksum "pom.xml" }}
+            - hello-spring-mvn-V3
       - run: mvn dependency:go-offline
       - run:
           name: Build and unit test
@@ -32,33 +36,38 @@ jobs:
       - save_cache:
           paths:
            - ~/.m2
-          key: hello-spring-mvn-V2-{{ checksum "pom.xml" }}
+          key: hello-spring-mvn-V3-{{ checksum "pom.xml" }}
       - store_test_results:
           path: target/surefire-reports
 
 
 
+  # The Dockerfile runs the full Maven build inside the image build, so this
+  # job only needs the docker CLI. Requires DOCKERHUB_USER / DOCKERHUB_PASS
+  # environment variables (replaces the archived Spotify dockerfile-maven-plugin,
+  # which cannot run on modern JDKs).
   publish-docker:
     docker:
-      - image: circleci/openjdk:11-stretch-node-browsers-legacy
+      - image: cimg/openjdk:25.0
     working_directory: ~/repo
     steps:
       - checkout
-      - restore_cache:
-          keys:
-            - hello-spring-mvn-V2-{{ checksum "pom.xml" }}
-            - hello-spring-mvn-V2
       - setup_remote_docker:
           docker_layer_caching: true
-      - run: mvn dependency:go-offline
-      - run: cp .mvn/wrapper/settings.xml ~/.m2/settings.xml
-      - run: echo "<settingsSecurity><master>${maven_security_master}</master></settingsSecurity>" > ~/.m2/settings-security.xml
       - run:
-          name: Publish Docker image with maven
+          name: Build and publish Docker image
           command: |
-            ./mvnw compile install dockerfile:build dockerfile:push -B -DskipTests=true \
-              -Dbuild.number=${CIRCLE_BUILD_NUM} \
-              -Dcommit.hash=${CIRCLE_SHA1} \
-              -Dcircle.workflow.guid=${CIRCLE_WORKFLOW_ID} \
-              -Dbuild.user=${CIRCLE_PROJECT_USERNAME} \
-              -Dbuild.repo=${CIRCLE_PROJECT_REPONAME}
+            IMAGE=vinberts/shrinkly
+            VERSION=$(./mvnw -q help:evaluate -Dexpression=project.version -DforceStdout)
+            BUILD_TAG="${VERSION}-b${CIRCLE_BUILD_NUM}"
+            echo "${DOCKERHUB_PASS}" | docker login -u "${DOCKERHUB_USER}" --password-stdin
+            # Build once, then publish three tags off the same image:
+            #   <version>-b<build>  immutable, unique per build (audit / rollback to an exact build)
+            #   <version>           predictable, what docker-compose should pin (e.g. 2.0.3)
+            #   latest              convenience pointer to the most recent master build
+            docker build -t "${IMAGE}:${BUILD_TAG}" .
+            docker tag "${IMAGE}:${BUILD_TAG}" "${IMAGE}:${VERSION}"
+            docker tag "${IMAGE}:${BUILD_TAG}" "${IMAGE}:latest"
+            docker push "${IMAGE}:${BUILD_TAG}"
+            docker push "${IMAGE}:${VERSION}"
+            docker push "${IMAGE}:latest"

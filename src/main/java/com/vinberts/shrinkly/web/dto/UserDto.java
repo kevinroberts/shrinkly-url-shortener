@@ -1,20 +1,21 @@
 package com.vinberts.shrinkly.web.dto;
 
+import com.vinberts.shrinkly.validation.PasswordMatchable;
 import com.vinberts.shrinkly.validation.PasswordMatches;
 import com.vinberts.shrinkly.validation.ValidEmail;
 import com.vinberts.shrinkly.validation.ValidPassword;
 import com.vinberts.shrinkly.validation.ValidUsername;
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 /**
  *
  */
 @Data
 @PasswordMatches
-public class UserDto {
+public class UserDto implements PasswordMatchable {
 
     @NotNull
     @ValidUsername

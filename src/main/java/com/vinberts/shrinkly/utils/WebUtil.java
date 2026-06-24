@@ -1,6 +1,6 @@
 package com.vinberts.shrinkly.utils;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  *
@@ -12,10 +12,12 @@ public class WebUtil {
     }
 
     public static String getClientIP(HttpServletRequest request) {
-        final String xfHeader = request.getHeader("X-Forwarded-For");
-        if (xfHeader == null) {
-            return request.getRemoteAddr();
+        String remoteip = request.getHeader("CF-Connecting-IP");
+        if (remoteip == null) {
+            final String xfHeader = request.getHeader("X-Forwarded-For");
+            // X-Forwarded-For may be a comma-separated chain; the first entry is the client
+            remoteip = xfHeader != null ? xfHeader.split(",")[0] : request.getRemoteAddr();
         }
-        return xfHeader.split(",")[0];
+        return remoteip;
     }
 }

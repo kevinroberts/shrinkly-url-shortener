@@ -2,13 +2,13 @@
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org"
 >
 <head>
-    <noscript th:replace="fragments/header :: head" />
+    <noscript th:replace="~{fragments/header :: head}" />
 </head>
 <body class="bg-default">
 
 <!-- Main content -->
 <div class="main-content">
-    <div th:replace="fragments/header :: topnav(version='navbar-dark',enableMobileMenu=true)"/>
+    <div th:replace="~{fragments/header :: topnav(version='navbar-dark',enableMobileMenu=true)}"/>
 
     <div class="header bg-gradient-primary py-7 py-lg-8">
         <div class="container">
@@ -87,7 +87,7 @@
                 </div>
                 <div class="row mt-3">
                     <div class="col-6">
-                        <a th:href="@{/forgetPassword.html}" class="text-light"><small>Forgot password?</small></a>
+                        <a th:href="@{/forgetPassword}" class="text-light"><small>Forgot password?</small></a>
                     </div>
                     <div class="col-6 text-right">
                         <a th:href="@{/registration}" class="text-light"><small>Create new account</small></a>
@@ -101,7 +101,7 @@
 
 </div>
 
-<div th:replace="fragments/footerDarkBg :: footerDark"/>
+<div th:replace="~{fragments/footerDarkBg :: footerDark}"/>
 
 </body>
 </html>
